@@ -62,7 +62,7 @@ const WelcomePage = () => {
               mb: 2
             }}
           >
-            Welcome to QueenB
+            Welcome to QueenB's Mentorship Platform!
           </Typography>
           
           <Typography 

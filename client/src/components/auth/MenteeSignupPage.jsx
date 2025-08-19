@@ -153,6 +153,12 @@ const MenteeSignupPage = () => {
         // NEW: Show success banner instead of simple message
         setShowSuccessBanner(true);
         
+        // Store the user ID and type for profile access
+        if (data.data && data.data._id) {
+          sessionStorage.setItem('currentUserId', data.data._id);
+          sessionStorage.setItem('userType', 'mentee');
+        }
+        
         // Redirect to mentors page after a longer delay to show the banner
         setTimeout(() => {
           navigate('/mentors?signupSuccess=1');
@@ -251,18 +257,68 @@ const MenteeSignupPage = () => {
             <SuccessBanner
               title="Account Created Successfully"
               subtitle="You're all set! Ready to find your perfect mentor and start your learning journey."
-              ctaLabel="Explore Mentors"
-              onCtaClick={handleExploreMentors}
+              ctaLabel="View My Profile"
+              onCtaClick={() => {
+                const userId = sessionStorage.getItem('currentUserId');
+                if (userId) {
+                  navigate(`/profile/mentee/${userId}`);
+                }
+              }}
               onClose={handleSuccessBannerClose}
               variant="clean"
             />
           )}
 
-          {/* Error Message */}
+          {/* Additional Navigation Options */}
+          {showSuccessBanner && (
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={handleExploreMentors}
+                sx={{ mr: 2 }}
+              >
+                Explore Mentors
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  const userId = sessionStorage.getItem('currentUserId');
+                  if (userId) {
+                    navigate(`/profile/mentee/${userId}`);
+                  }
+                }}
+              >
+                Edit My Profile
+              </Button>
+            </Box>
+          )}
+
+          {/* Error Message - Nice Button Style */}
           {generalError && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {generalError}
-            </Alert>
+            <Box sx={{ 
+              mb: 3, 
+              p: 2, 
+              borderRadius: 2, 
+              bgcolor: 'error.light', 
+              border: '1px solid',
+              borderColor: 'error.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <Typography variant="body2" color="error.dark" sx={{ flex: 1 }}>
+                {generalError}
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={() => setError('')}
+                sx={{ ml: 2, minWidth: 'auto' }}
+              >
+                ×
+              </Button>
+            </Box>
           )}
 
           {/* Sign-up Form */}

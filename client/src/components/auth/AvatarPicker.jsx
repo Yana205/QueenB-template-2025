@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Avatar,
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Grid, 
+  Card, 
+  CardContent, 
+  Avatar, 
   IconButton,
   Divider,
   Tooltip
@@ -22,8 +22,7 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
   useEffect(() => {
     if (firstName && lastName) {
       const personalized = avatarOptions.map(option => ({
-        ...option,
-        url: generateCustomAvatar(firstName, lastName, option.url.split('background=')[1].split('&')[0])
+        ...option
       }));
       setPersonalizedAvatars(personalized);
     } else {
@@ -47,7 +46,7 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
         Profile Picture
       </Typography>
-
+      
       {/* Selected Avatar Display */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
         <Box sx={{ position: 'relative' }}>
@@ -59,7 +58,9 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
               height: 80, 
               border: '3px solid',
               borderColor: (theme) => theme?.palette?.primary?.light || '#E8B4B8',
-              boxShadow: 2
+              boxShadow: 2,
+              fontSize: '2.5rem',
+              bgcolor: (theme) => theme?.palette?.background?.paper || '#FFFFFF'
             }}
           />
           <IconButton
@@ -87,7 +88,7 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
             {firstName && lastName 
-              ? `Current avatar with initials: ${firstName.charAt(0)}${lastName.charAt(0)}`
+              ? 'Current avatar: Personalized for you'
               : 'Choose an avatar that represents you'
             }
           </Typography>
@@ -106,7 +107,7 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
             <Typography variant="h6" sx={{ mb: 3, textAlign: 'center' }}>
               🎨 Choose Your Avatar
             </Typography>
-
+            
             <Grid container spacing={2} sx={{ maxHeight: 320, overflow: 'auto', mb: 2 }}>
               {personalizedAvatars.map((avatar) => (
                 <Grid item xs={3} key={avatar.id}>
@@ -139,7 +140,12 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
                       <Avatar
                         src={avatar.url}
                         alt={avatar.name}
-                        sx={{ width: 64, height: 64, mx: 'auto', mb: 1 }}
+                        sx={{ 
+                          width: 40, 
+                          height: 40, 
+                          mx: 'auto',
+                          mb: 1
+                        }}
                       />
                       <Typography variant="caption" sx={{ fontWeight: 500 }}>
                         {avatar.name}
@@ -154,10 +160,10 @@ const AvatarPicker = ({ selectedAvatar, onAvatarSelect, error, firstName = '', l
             <Box sx={{ textAlign: 'center' }}>
               <Button
                 onClick={() => {
-                  const defaultUrl = firstName && lastName 
+                  const defaultAvatarUrl = firstName && lastName 
                     ? generateCustomAvatar(firstName, lastName)
                     : defaultAvatar;
-                  onAvatarSelect(defaultUrl);
+                  onAvatarSelect(defaultAvatarUrl);
                   setIsOpen(false);
                 }}
                 sx={{

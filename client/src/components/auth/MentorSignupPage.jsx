@@ -51,6 +51,7 @@ const MentorSignupPage = () => {
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [localError, setLocalError] = useState(''); // Local error state for server errors
   
   // Use the reusable validation hook
   const {
@@ -123,8 +124,12 @@ const MentorSignupPage = () => {
       clearFieldError(name);
     }
     
-    // Clear any previous general errors/success messages
-    if (generalError) setError('');
+    // Clear local error when user types in email field
+    if (name === 'email' && localError) {
+      setLocalError('');
+    }
+    
+    // Don't clear general errors when typing - let server errors stay visible
     if (success) setSuccessMessage('');
     
     // Real-time validation for specific fields
@@ -276,8 +281,15 @@ const MentorSignupPage = () => {
       const result = await response.json();
 
       if (response.ok) {
+        const result = await response.json();
         setSuccessMessage(result.message || 'Mentor registered successfully!');
         setShowSuccessBanner(true);
+        
+        // Store the user ID for profile access
+        if (result.data && result.data._id) {
+          sessionStorage.setItem('currentUserId', result.data._id);
+          sessionStorage.setItem('userType', 'mentor');
+        }
         
         // Clear form data
         setFormData({
@@ -297,15 +309,20 @@ const MentorSignupPage = () => {
           twitterUrl: ''
         });
         
-        // Clear all errors
-        clearErrors();
+        // Don't clear errors immediately - let user see success message first
         
-        // Redirect to success page or show success message
+        // Redirect to mentors page to see all mentors
         setTimeout(() => {
-          navigate('/?signupSuccess=1', { replace: true });
+          navigate('/mentors?signupSuccess=1', { replace: true });
         }, 2000);
       } else {
-        setError(result.error || 'Failed to register mentor');
+        console.log('Server error response:', result);
+        console.log('Setting error to:', result.error);
+        const errorMessage = result.error || 'Failed to register mentor';
+        setError(errorMessage); // Set in hook
+        setLocalError(errorMessage); // Set in local state
+        console.log('Error state after setting:', generalError);
+        // Don't clear form data on error - let user fix the issue
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -374,6 +391,16 @@ const MentorSignupPage = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [formData]);
+
+  // Debug: Monitor error state changes
+  useEffect(() => {
+    console.log('generalError changed to:', generalError);
+  }, [generalError]);
+
+  // Debug: Monitor local error state changes
+  useEffect(() => {
+    console.log('localError changed to:', localError);
+  }, [localError]);
 
   // Check if form is valid for submit button
   const isFormValid = () => {
@@ -504,100 +531,139 @@ const MentorSignupPage = () => {
             <SuccessBanner
               title="Welcome to QueenB, Mentor!"
               subtitle="You're now ready to help others grow and succeed. Your expertise will make a real difference in someone's learning journey."
-              ctaLabel="View All Mentors"
-              onCtaClick={handleExploreMentors}
+              ctaLabel="View My Profile"
+              onCtaClick={() => {
+                const userId = sessionStorage.getItem('currentUserId');
+                if (userId) {
+                  navigate(`/profile/mentor/${userId}`);
+                }
+              }}
               onClose={handleSuccessBannerClose}
               variant="clean"
             />
           )}
 
+          {/* Additional Navigation Options */}
+          {showSuccessBanner && (
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={handleExploreMentors}
+                sx={{ mr: 2 }}
+              >
+                View All Mentors
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  const userId = sessionStorage.getItem('currentUserId');
+                  if (userId) {
+                    navigate(`/profile/mentor/${userId}`);
+                  }
+                }}
+              >
+                Edit My Profile
+              </Button>
+            </Box>
+          )}
+
           {/* Error Message */}
-          {generalError && (
+          {(localError || generalError) && (
             <Alert severity="error" sx={{ mb: 3 }}>
-              {generalError}
+              {localError || generalError}
             </Alert>
           )}
 
           {/* Sign-up Form */}
           <form onSubmit={handleSubmit}>
             {/* Basic Information Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <PersonIcon className="text-pink-500 mr-2" />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Basic Information
-              </h3>
+                <PersonIcon sx={{ color: 'primary.main' }} />
+              </Typography>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Grid container spacing={2}>
                 {/* First Name */}
-                <TextField
-                  name="firstName"
-                  label="First Name *"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.firstName}
-                  helperText={fieldErrors.firstName}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    name="firstName"
+                    label="First Name *"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.firstName}
+                    helperText={fieldErrors.firstName}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Last Name */}
-                <TextField
-                  name="lastName"
-                  label="Last Name *"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.lastName}
-                  helperText={fieldErrors.lastName}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    name="lastName"
+                    label="Last Name *"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.lastName}
+                    helperText={fieldErrors.lastName}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Email */}
-                <TextField
-                  name="email"
-                  label="Email Address *"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.email}
-                  helperText={fieldErrors.email}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12}>
+                  <TextField
+                    name="email"
+                    label="Email Address *"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.email}
+                    helperText={fieldErrors.email}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Password */}
-                <TextField
-                  name="password"
-                  label="Password *"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.password}
-                  helperText={fieldErrors.password}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12}>
+                  <TextField
+                    name="password"
+                    label="Password *"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.password}
+                    helperText={fieldErrors.password}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Phone */}
-                <TextField
-                  name="phone"
-                  label="Phone Number *"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.phone}
-                  helperText={fieldErrors.phone}
-                  fullWidth
-                  required
-                />
-              </div>
-            </div>
+                <Grid item xs={12}>
+                  <TextField
+                    name="phone"
+                    label="Phone Number *"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.phone}
+                    helperText={fieldErrors.phone}
+                    fullWidth
+                    required
+                  />
+                </Grid>
+              </Grid>
+            </Box>
 
             {/* Avatar Selection */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <AccountCircleIcon className="text-pink-500 mr-2" />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Profile Picture
-              </h3>
+                <AccountCircleIcon sx={{ color: 'primary.main' }} />
+              </Typography>
               <AvatarPicker
                 selectedAvatar={formData.avatar}
                 onAvatarSelect={handleAvatarSelect}
@@ -605,109 +671,115 @@ const MentorSignupPage = () => {
                 firstName={formData.firstName}
                 lastName={formData.lastName}
               />
-            </div>
+            </Box>
 
             {/* Professional Information Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <WorkIcon className="text-pink-500 mr-2" />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Professional Information
-              </h3>
+                <WorkIcon sx={{ color: 'primary.main' }} />
+              </Typography>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Grid container spacing={2}>
                 {/* Years of Experience */}
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Years of Experience *</InputLabel>
-                  <Select
-                    name="yearsOfExperience"
-                    value={formData.yearsOfExperience}
-                    onChange={handleInputChange}
-                    label="Years of Experience *"
-                    required
-                  >
-                    {experienceLevels.map((level) => (
-                      <MenuItem key={level} value={level}>
-                        {level}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Years of Experience *</InputLabel>
+                    <Select
+                      name="yearsOfExperience"
+                      value={formData.yearsOfExperience}
+                      onChange={handleInputChange}
+                      label="Years of Experience *"
+                      required
+                    >
+                      {experienceLevels.map((level) => (
+                        <MenuItem key={level} value={level}>
+                          {level}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
                 {/* Expertise Areas */}
-                <Autocomplete
-                  multiple
-                  options={availableTechnologies}
-                  value={formData.expertise}
-                  onChange={handleExpertiseChange}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Areas of Expertise *"
-                      placeholder="Select your skills..."
-                      helperText={fieldErrors.expertise || "Choose the technologies you're expert in"}
-                      error={!!fieldErrors.expertise}
-                    />
-                  )}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => {
-                      const { key, ...chipProps } = getTagProps({ index });
-                      return (
-                        <Chip
-                          key={key}
-                          label={option}
-                          {...chipProps}
-                          sx={{
-                            backgroundColor: 'primary.light',
-                            color: 'white',
-                            '& .MuiChip-deleteIcon': {
+                <Grid item xs={12}>
+                  <Autocomplete
+                    multiple
+                    options={availableTechnologies}
+                    value={formData.expertise}
+                    onChange={handleExpertiseChange}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Areas of Expertise *"
+                        placeholder="Select your skills..."
+                        helperText={fieldErrors.expertise || "Choose the technologies you're expert in"}
+                        error={!!fieldErrors.expertise}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => {
+                        const { key, ...chipProps } = getTagProps({ index });
+                        return (
+                          <Chip
+                            key={key}
+                            label={option}
+                            {...chipProps}
+                            sx={{
+                              backgroundColor: 'primary.light',
                               color: 'white',
-                            }
-                          }}
-                        />
-                      );
-                    })
-                  }
-                  sx={{ mb: 2 }}
-                />
-
+                              '& .MuiChip-deleteIcon': {
+                                color: 'white',
+                              }
+                            }}
+                          />
+                        );
+                      })
+                    }
+                  />
+                </Grid>
+                
                 {/* Availability */}
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Availability *</InputLabel>
-                  <Select
-                    name="availability"
-                    value={formData.availability}
-                    onChange={handleInputChange}
-                    label="Availability *"
-                    required
-                  >
-                    {availabilityOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </div>
-            </div>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Availability *</InputLabel>
+                    <Select
+                      name="availability"
+                      value={formData.availability}
+                      onChange={handleInputChange}
+                      label="Availability *"
+                      required
+                    >
+                      {availabilityOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Box>
 
             {/* Description */}
-            <TextField
-              fullWidth
-              label="About You & Your Mentoring Style"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              multiline
-              rows={4}
-              sx={{ mb: 3 }}
-              helperText="Tell mentees about your experience and how you like to mentor in our free community"
-            />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <TextField
+                fullWidth
+                label="About You & Your Mentoring Style"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                multiline
+                rows={4}
+                helperText="Tell mentees about your experience and how you like to mentor in our free community"
+              />
+            </Box>
 
             {/* Contact Links Section */}
             <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-                <LinkIcon sx={{ color: (theme) => theme?.palette?.primary?.main || '#E8B4B8', mr: 1 }} />
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Contact Links (Optional)
+                <LinkIcon sx={{ color: 'primary.main' }} />
               </Typography>
               
               <Grid container spacing={2}>

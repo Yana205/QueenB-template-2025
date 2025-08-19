@@ -49,8 +49,14 @@ const MenteeLoginPage = () => {
         );
 
         if (mentee) {
-          // Login successful - redirect to mentors page
+          // Login successful - set sessionStorage and redirect to mentors page
           console.log('Mentee login successful:', mentee.firstName);
+          
+          // Store user ID and type in sessionStorage for profile access
+          sessionStorage.setItem('currentUserId', mentee._id);
+          sessionStorage.setItem('userType', 'mentee');
+          
+          // Redirect to mentors page
           navigate('/mentors');
         } else {
           setError('Invalid email or password');

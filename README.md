@@ -9,7 +9,7 @@ QueenB is a platform that connects experienced tech professionals (mentors) with
 
 ### Key Features:
 - **Mentor Discovery**: Search and filter mentors by technology, experience, and name
-- **Secure Authentication**: JWT-based authentication with fallback to basic auth for development
+- **Secure Authentication**: -to be- JWT-based authentication with fallback to basic auth for development
 - **Profile Management**: Comprehensive mentor and mentee profiles
 - **Contact Integration**: Direct contact via email, phone, WhatsApp, and LinkedIn
 - **Responsive Design**: Works seamlessly on desktop and mobile devices

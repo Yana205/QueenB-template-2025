@@ -285,10 +285,13 @@ const MentorSignupPage = () => {
         setSuccessMessage(result.message || 'Mentor registered successfully!');
         setShowSuccessBanner(true);
         
-        // Store the user ID for profile access
+        // Store complete user data for profile access and display
         if (result.data && result.data._id) {
           sessionStorage.setItem('currentUserId', result.data._id);
           sessionStorage.setItem('userType', 'mentor');
+          sessionStorage.setItem('userFirstName', result.data.firstName);
+          sessionStorage.setItem('userLastName', result.data.lastName);
+          sessionStorage.setItem('userProfileImage', result.data.profileImage || '');
         }
         
         // Clear form data

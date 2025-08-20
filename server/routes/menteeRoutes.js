@@ -148,13 +148,39 @@ router.put('/:id', async (req, res) => {
 // ==========================================
 router.delete('/:id', async (req, res) => {
   try {
-    const mentee = await Mentee.findByIdAndDelete(req.params.id);
+    console.log('🗑️ Attempting to delete mentee with ID:', req.params.id);
     
-    if (!mentee) {
+    // First, check if mentee exists
+    const existingMentee = await Mentee.findById(req.params.id);
+    if (!existingMentee) {
+      console.log('❌ Mentee not found for deletion:', req.params.id);
       return res.status(404).json({
         success: false,
         error: 'Mentee not found'
       });
+    }
+    
+    console.log('✅ Found mentee to delete:', existingMentee.firstName, existingMentee.lastName);
+    
+    // Perform the deletion
+    const deletedMentee = await Mentee.findByIdAndDelete(req.params.id);
+    
+    if (!deletedMentee) {
+      console.log('❌ Failed to delete mentee:', req.params.id);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to delete mentee'
+      });
+    }
+    
+    console.log('✅ Mentee deleted successfully:', deletedMentee.firstName, deletedMentee.lastName);
+    
+    // Verify deletion by trying to find the mentee again
+    const verifyDeletion = await Mentee.findById(req.params.id);
+    if (verifyDeletion) {
+      console.log('⚠️ WARNING: Mentee still exists after deletion!', req.params.id);
+    } else {
+      console.log('✅ Verification: Mentee successfully removed from database');
     }
     
     res.json({
@@ -162,7 +188,7 @@ router.delete('/:id', async (req, res) => {
       message: 'Mentee deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting mentee:', error);
+    console.error('❌ Error deleting mentee:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete mentee'

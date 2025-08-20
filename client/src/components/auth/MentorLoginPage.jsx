@@ -52,9 +52,12 @@ const MentorLoginPage = () => {
           // Login successful - set sessionStorage and redirect to mentors page
           console.log('Mentor login successful:', mentor.firstName);
           
-          // Store user ID and type in sessionStorage for profile access
+          // Store complete user data in sessionStorage for profile access and display
           sessionStorage.setItem('currentUserId', mentor._id);
           sessionStorage.setItem('userType', 'mentor');
+          sessionStorage.setItem('userFirstName', mentor.firstName);
+          sessionStorage.setItem('userLastName', mentor.lastName);
+          sessionStorage.setItem('userProfileImage', mentor.profileImage || '');
           
           // Redirect to mentors page
           navigate('/mentors');

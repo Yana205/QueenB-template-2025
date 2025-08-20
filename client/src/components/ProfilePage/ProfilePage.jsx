@@ -139,7 +139,7 @@ const ProfilePage = () => {
   const fetchProfileData = async () => {
     try {
       setIsLoading(true);
-      const endpoint = isMentor ? `/api/mentors/${id}` : `/api/mentees/${id}`;
+      const endpoint = currentUserType === 'mentor' ? `/api/mentors/${id}` : `/api/mentees/${id}`;
       const response = await fetch(endpoint);
       const result = await response.json();
       
@@ -156,7 +156,7 @@ const ProfilePage = () => {
           profileImage: data.profileImage || ''
         });
         
-        if (isMentor) {
+        if (currentUserType === 'mentor') {
           // Set mentor-specific data
           setMentorData({
             technologies: data.technologies || [],
@@ -188,9 +188,9 @@ const ProfilePage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    if (isMentor && mentorData.hasOwnProperty(name)) {
+    if (currentUserType === 'mentor' && mentorData.hasOwnProperty(name)) {
       setMentorData(prev => ({ ...prev, [name]: value }));
-    } else if (isMentee && menteeData.hasOwnProperty(name)) {
+    } else if (currentUserType === 'mentee' && menteeData.hasOwnProperty(name)) {
       setMenteeData(prev => ({ ...prev, [name]: value }));
     } else {
       setProfileData(prev => ({ ...prev, [name]: value }));
@@ -199,7 +199,7 @@ const ProfilePage = () => {
 
   const handleTechnologyChange = (event) => {
     const { value } = event.target;
-    if (isMentor) {
+    if (currentUserType === 'mentor') {
       setMentorData(prev => ({
         ...prev,
         technologies: typeof value === 'string' ? value.split(',') : value
@@ -228,10 +228,10 @@ const ProfilePage = () => {
       // Prepare data to send
       const dataToSend = {
         ...profileData,
-        ...(isMentor ? mentorData : menteeData)
+        ...(currentUserType === 'mentor' ? mentorData : menteeData)
       };
       
-      const endpoint = isMentor ? `/api/mentors/${id}` : `/api/mentees/${id}`;
+      const endpoint = currentUserType === 'mentor' ? `/api/mentors/${id}` : `/api/mentees/${id}`;
       const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
@@ -263,19 +263,27 @@ const ProfilePage = () => {
       setIsDeleting(true);
       setError('');
       
-      const endpoint = isMentor ? `/api/mentors/${id}` : `/api/mentees/${id}`;
+      const endpoint = currentUserType === 'mentor' ? `/api/mentors/${id}` : `/api/mentees/${id}`;
+      console.log('🗑️ Attempting to delete account:', { id, currentUserType, endpoint });
+      
       const response = await fetch(endpoint, {
         method: 'DELETE'
       });
       
+      console.log('🗑️ Delete response status:', response.status);
       const result = await response.json();
+      console.log('🗑️ Delete response result:', result);
       
       if (result.success) {
         setSuccess('Account deleted successfully');
+        console.log('✅ Account deleted successfully, clearing session data...');
         
-        // Clear stored data immediately
+        // Clear all stored user data immediately
         sessionStorage.removeItem('currentUserId');
         sessionStorage.removeItem('userType');
+        sessionStorage.removeItem('userFirstName');
+        sessionStorage.removeItem('userLastName');
+        sessionStorage.removeItem('userProfileImage');
         
         // Set loading to prevent any further API calls
         setIsLoading(true);
@@ -284,9 +292,10 @@ const ProfilePage = () => {
         navigate('/', { replace: true });
       } else {
         setError(result.error || 'Failed to delete account');
+        console.error('❌ Failed to delete account:', result.error);
       }
     } catch (error) {
-      console.error('Error deleting account:', error);
+      console.error('❌ Error deleting account:', error);
       setError('Network error. Please try again.');
     } finally {
       setIsDeleting(false);

@@ -153,10 +153,13 @@ const MenteeSignupPage = () => {
         // NEW: Show success banner instead of simple message
         setShowSuccessBanner(true);
         
-        // Store the user ID and type for profile access
+        // Store complete user data for profile access and display
         if (data.data && data.data._id) {
           sessionStorage.setItem('currentUserId', data.data._id);
           sessionStorage.setItem('userType', 'mentee');
+          sessionStorage.setItem('userFirstName', data.data.firstName);
+          sessionStorage.setItem('userLastName', data.data.lastName);
+          sessionStorage.setItem('userProfileImage', data.data.profileImage || '');
         }
         
         // Redirect to mentors page after a longer delay to show the banner

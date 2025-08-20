@@ -38,17 +38,24 @@ function HomePage() {
   });
 
   useEffect(() => {
-    // Get user ID and type from sessionStorage (set after signup)
+    // Get complete user data from sessionStorage (set after login)
     const userId = sessionStorage.getItem('currentUserId');
     const userType = sessionStorage.getItem('userType');
+    const userFirstName = sessionStorage.getItem('userFirstName');
+    const userLastName = sessionStorage.getItem('userLastName');
+    const userProfileImage = sessionStorage.getItem('userProfileImage');
     
     console.log('HomePage: Found userId:', userId, 'userType:', userType);
+    console.log('HomePage: Found user name:', userFirstName, userLastName);
     
     if (userId) {
       setCurrentUser(prev => ({ 
         ...prev, 
         id: userId,
-        userType: userType || 'mentor' // Default to mentor if not specified
+        userType: userType || 'mentor', // Default to mentor if not specified
+        firstName: userFirstName || 'User',
+        lastName: userLastName || 'Name',
+        profileImage: userProfileImage || null
       }));
     }
   }, []);
@@ -70,7 +77,23 @@ function HomePage() {
 
   const handleLogout = () => {
     handleProfileMenuClose();
-    // In a real app, this would clear auth tokens and redirect to login
+    
+    // Clear all user data from sessionStorage
+    sessionStorage.removeItem('currentUserId');
+    sessionStorage.removeItem('userType');
+    sessionStorage.removeItem('userFirstName');
+    sessionStorage.removeItem('userLastName');
+    sessionStorage.removeItem('userProfileImage');
+    
+    // Reset current user state
+    setCurrentUser({
+      id: null,
+      firstName: 'User',
+      lastName: 'Name',
+      profileImage: null
+    });
+    
+    // Redirect to home page
     navigate('/');
   };
 

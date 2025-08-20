@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import { 
   Box, 
   Typography, 
-  AppBar, 
-  Toolbar, 
-  Button, 
   Avatar,
   IconButton,
   Menu,
@@ -20,6 +17,8 @@ import { useNavigate } from "react-router-dom";
 
 import SearchBar from "./SearchBar";
 import AllMentorsCards from "./AllMentorsCards";
+import WelcomeTitleForMentee from "./welcomeTitleForMentee";
+import WelcomeTitleForMentor from "./WelcomeTitleForMentor";
 
 function HomePage() {
   const navigate = useNavigate();
@@ -249,7 +248,13 @@ function HomePage() {
             gap: 5,
           }}
         >
-          <Typography variant="h2">Find Your Mentor</Typography>
+           {currentUser.userType === "mentee" && (
+            <WelcomeTitleForMentee menteeName={currentUser.firstName} />
+          )}
+          {currentUser.userType === "mentor" && (
+            <WelcomeTitleForMentor mentorName={currentUser.firstName} />
+          )}
+
 
           <SearchBar handelSearchClick={handelSearchClick} />
 

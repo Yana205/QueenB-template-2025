@@ -10,7 +10,6 @@ import MentorFullName from "./mentor/MentorFullName";
 import MentorTechnologies from "./mentor/MentorTechnologies";
 import ContactButtonsWrapper from "./ContactButtonsWrapper";
 
-
 function MentorContactCard({ mentor }) {
   return (
     <Card
@@ -37,8 +36,13 @@ function MentorContactCard({ mentor }) {
 
         <p></p>
 
-        <Typography variant="h4">About Me:</Typography>
-        <Typography variant="p">{mentor.description}</Typography>
+        {/* mentor description is optional*/}
+        {mentor.description && (
+          <>
+            <Typography variant="h4">About Me:</Typography>
+            <Typography variant="p">{mentor.description}</Typography>
+          </>
+        )}
       </CardContent>
 
       <CardActionArea sx={{ display: "flex", alignItems: "center" }}>

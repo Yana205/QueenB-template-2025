@@ -2,10 +2,67 @@
 
 ## Base URL
 - Development: `http://localhost:5000/api`
-- Production: `https://your-domain.com/api`
 
-## Authentication
-Currently no authentication required (will be added in future phases)
+## 🔐 Authentication Endpoints
+
+### User Registration
+```
+POST /api/auth/signup
+Content-Type: application/json
+
+{
+  "userType": "mentor", // or "mentee"
+  "firstName": "Sarah",
+  "lastName": "Cohen",
+  "email": "sarah@example.com",
+  "password": "MySecurePassword123!",
+  "phone": "050-1234567",
+  
+  // Mentor-specific fields
+  "technologies": ["JavaScript", "React", "Node.js"],
+  "yearsOfExperience": 5,
+  "description": "Full-stack developer",
+  "linkedinUrl": "https://linkedin.com/in/sarahcohen"
+}
+```
+
+### User Login
+```
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah@example.com",
+  "password": "MySecurePassword123!",
+  "userType": "mentor" // optional
+}
+```
+
+### Get Current User Profile
+```
+GET /api/auth/me
+Authorization: Bearer <jwt-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "_id": "...",
+      "firstName": "Sarah",
+      "lastName": "Cohen",
+      "email": "sarah@example.com",
+      "technologies": ["JavaScript", "React"],
+      "yearsOfExperience": 5
+    },
+    "userType": "mentor"
+  }
+}
+```
+
+---
 
 ---
 
@@ -108,15 +165,6 @@ Content-Type: application/json
 }
 ```
 
-### Match Mentee with Mentor
-```
-POST /api/mentees/:menteeId/match
-Content-Type: application/json
-
-{
-  "mentorId": "65abc123..."
-}
-```
 
 ### Update Mentee
 ```

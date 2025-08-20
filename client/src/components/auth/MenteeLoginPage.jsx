@@ -11,6 +11,7 @@ import {
   Paper,
   Divider
 } from '@mui/material';
+import authService from '../../services/authService';
 
 const MenteeLoginPage = () => {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ const MenteeLoginPage = () => {
           setError('Invalid email or password');
         }
       } else {
-        setError('Failed to fetch mentee data');
+        setError(result.error || 'Invalid email or password');
       }
     } catch (error) {
       console.error('Login error:', error);

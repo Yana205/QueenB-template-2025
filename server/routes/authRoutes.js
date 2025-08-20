@@ -14,7 +14,7 @@ const router = express.Router();
 const generateToken = (userId, userType) => {
   return jwt.sign(
     { userId, userType },
-    process.env.JWT_SECRET || 'your-secret-key',
+    process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
 };

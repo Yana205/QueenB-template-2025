@@ -11,6 +11,7 @@ import {
   Paper,
   Divider
 } from '@mui/material';
+import authService from '../../services/authService';
 
 const MentorLoginPage = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const MentorLoginPage = () => {
     if (error) setError('');
   };
 
-  const handleLogin = async (e) => {
+    const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -65,7 +66,7 @@ const MentorLoginPage = () => {
           setError('Invalid email or password');
         }
       } else {
-        setError('Failed to fetch mentor data');
+        setError(result.error || 'Invalid email or password');
       }
     } catch (error) {
       console.error('Login error:', error);

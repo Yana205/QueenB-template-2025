@@ -25,7 +25,6 @@ const mentorSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true, // No duplicate emails
     lowercase: true, // Convert to lowercase
     trim: true,
     match: [
@@ -114,7 +113,7 @@ const mentorSchema = new mongoose.Schema({
   // Optional fields for future features
   profileImage: {
     type: String,
-    default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face' // Default profile image
+    default: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU' // Default profile image
   },
   
   availability: {

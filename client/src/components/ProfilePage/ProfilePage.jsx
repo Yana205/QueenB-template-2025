@@ -95,9 +95,7 @@ const ProfilePage = () => {
     'Go', 'Scala', 'Elixir', 'GraphQL', 'REST APIs', 'Microservices'
   ];
   
-  const experienceLevels = [
-    '1-2 years', '3-5 years', '5-8 years', '8-12 years', '12+ years'
-  ];
+  // Note: yearsOfExperience is now a number field, not a string enum
   
   const availabilityOptions = [
     { value: 'available', label: 'Available for mentoring' },
@@ -236,40 +234,25 @@ const ProfilePage = () => {
 
       // Sanitize data to ensure proper format
       if (currentUserType === 'mentor') {
-        console.log('🔧 Before sanitization:', {
-          yearsOfExperience: dataToSend.yearsOfExperience,
-          availability: dataToSend.availability
-        });
         
-        // Ensure yearsOfExperience is a valid string
-        if (dataToSend.yearsOfExperience && typeof dataToSend.yearsOfExperience === 'number') {
-          // Convert number to appropriate string range
-          const years = dataToSend.yearsOfExperience;
-          if (years <= 2) dataToSend.yearsOfExperience = '1-2 years';
-          else if (years <= 5) dataToSend.yearsOfExperience = '3-5 years';
-          else if (years <= 8) dataToSend.yearsOfExperience = '5-8 years';
-          else if (years <= 12) dataToSend.yearsOfExperience = '8-12 years';
-          else dataToSend.yearsOfExperience = '12+ years';
-          
-          console.log('🔧 Converted yearsOfExperience from', years, 'to', dataToSend.yearsOfExperience);
+        // Ensure yearsOfExperience is a valid number (0-50)
+        if (dataToSend.yearsOfExperience !== undefined && dataToSend.yearsOfExperience !== null) {
+          const years = parseInt(dataToSend.yearsOfExperience);
+          if (isNaN(years) || years < 0 || years > 50) {
+            dataToSend.yearsOfExperience = 0;
+          } else {
+            dataToSend.yearsOfExperience = years;
+          }
         }
         
         // Ensure availability is valid
         if (dataToSend.availability && !['available', 'part-time', 'full-time', 'flexible'].includes(dataToSend.availability)) {
           dataToSend.availability = 'available';
-          console.log('🔧 Fixed invalid availability to:', dataToSend.availability);
         }
         
-        console.log('🔧 After sanitization:', {
-          yearsOfExperience: dataToSend.yearsOfExperience,
-          availability: dataToSend.availability
-        });
       }
       
       const endpoint = currentUserType === 'mentor' ? `/api/mentors/${id}` : `/api/mentees/${id}`;
-      
-      console.log('💾 Attempting to save profile:', { id, currentUserType, endpoint });
-      console.log('📤 Data being sent:', dataToSend);
       
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -279,9 +262,7 @@ const ProfilePage = () => {
         body: JSON.stringify(dataToSend)
       });
       
-      console.log('💾 Save response status:', response.status);
       const result = await response.json();
-      console.log('💾 Save response result:', result);
       
       if (result.success) {
         setSuccess('Profile updated successfully!');
@@ -293,7 +274,11 @@ const ProfilePage = () => {
           
           // Dispatch custom event to notify HomePage to refresh
           window.dispatchEvent(new CustomEvent('profileUpdated'));
-          console.log('📢 Dispatched profileUpdated event');
+        } else if (currentUserType === 'mentee') {
+          sessionStorage.setItem('userProfileImage', result.data.profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU');
+          
+          // Dispatch custom event to notify HomePage to refresh
+          window.dispatchEvent(new CustomEvent('profileUpdated'));
         }
         
         // Refresh profile data
@@ -316,15 +301,12 @@ const ProfilePage = () => {
       setError('');
       
       const endpoint = currentUserType === 'mentor' ? `/api/mentors/${id}` : `/api/mentees/${id}`;
-      console.log('🗑️ Attempting to delete account:', { id, currentUserType, endpoint });
       
       const response = await fetch(endpoint, {
         method: 'DELETE'
       });
       
-      console.log('🗑️ Delete response status:', response.status);
       const result = await response.json();
-      console.log('🗑️ Delete response result:', result);
       
       if (result.success) {
         setSuccess('Account deleted successfully');
@@ -547,21 +529,17 @@ const ProfilePage = () => {
               
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth disabled={!isEditing}>
-                    <InputLabel>Years of Experience</InputLabel>
-                    <Select
-                      name="yearsOfExperience"
-                      value={mentorData.yearsOfExperience}
-                      onChange={handleInputChange}
-                      label="Years of Experience"
-                    >
-                      {experienceLevels.map((level) => (
-                        <MenuItem key={level} value={level}>
-                          {level}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    name="yearsOfExperience"
+                    label="Years of Experience"
+                    value={mentorData.yearsOfExperience}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    inputProps={{ min: 0, max: 50 }}
+                    helperText="Enter the number of years (e.g., 5)"
+                  />
                 </Grid>
                 
                 <Grid item xs={12} md={6}>

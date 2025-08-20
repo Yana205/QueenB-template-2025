@@ -69,6 +69,12 @@ const menteeSchema = new mongoose.Schema({
     default: false
   },
   
+  // Profile image
+  profileImage: {
+    type: String,
+    default: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU'
+  },
+  
   // For future authentication
   isActive: {
     type: Boolean,

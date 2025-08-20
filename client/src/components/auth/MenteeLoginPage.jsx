@@ -58,7 +58,7 @@ const MenteeLoginPage = () => {
           sessionStorage.setItem('userType', 'mentee');
           sessionStorage.setItem('userFirstName', mentee.firstName);
           sessionStorage.setItem('userLastName', mentee.lastName);
-          sessionStorage.setItem('userProfileImage', mentee.profileImage || '');
+          sessionStorage.setItem('userProfileImage', mentee.profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU');
           
           // Redirect to mentors page
           navigate('/mentors');
@@ -66,7 +66,7 @@ const MenteeLoginPage = () => {
           setError('Invalid email or password');
         }
       } else {
-        setError(result.error || 'Invalid email or password');
+        setError(data.error || 'Invalid email or password');
       }
     } catch (error) {
       console.error('Login error:', error);

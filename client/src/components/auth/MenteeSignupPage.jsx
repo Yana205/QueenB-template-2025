@@ -10,10 +10,12 @@ import {
   CircularProgress,
   Paper,
   Autocomplete,
-  Chip
+  Chip,
+  Avatar
 } from '@mui/material';
 import { useFormValidation } from '../../hook/useFormValidation';
 import SuccessBanner from '../ui/SuccessBanner';
+import ProfileImagePicker from './ProfileImagePicker';
 
 const MenteeSignupPage = () => {
   const navigate = useNavigate();
@@ -26,12 +28,14 @@ const MenteeSignupPage = () => {
     password: '',
     phone: '',
     description: '',
-    lookingFor: [] // Array of technologies they want to learn
+    lookingFor: [], // Array of technologies they want to learn
+    profileImage: '' // Add profile image field
   });
   
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [showProfileImagePicker, setShowProfileImagePicker] = useState(false);
   
   // NEW: Use the reusable validation hook
   const {
@@ -98,6 +102,14 @@ const MenteeSignupPage = () => {
     if (success) setSuccessMessage('');
   };
 
+  // Handle profile image selection
+  const handleProfileImageSelect = (imageUrl) => {
+    setFormData(prev => ({
+      ...prev,
+      profileImage: imageUrl
+    }));
+  };
+
   // Validate entire form before submission
   const validateForm = () => {
     let isValid = true;
@@ -134,6 +146,7 @@ const MenteeSignupPage = () => {
         phone: formData.phone,
         description: formData.description || '',
         lookingFor: formData.lookingFor,
+        profileImage: formData.profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU',
         profileCompleted: true,
         isActive: true
       };
@@ -159,7 +172,7 @@ const MenteeSignupPage = () => {
           sessionStorage.setItem('userType', 'mentee');
           sessionStorage.setItem('userFirstName', data.data.firstName);
           sessionStorage.setItem('userLastName', data.data.lastName);
-          sessionStorage.setItem('userProfileImage', data.data.profileImage || '');
+          sessionStorage.setItem('userProfileImage', data.data.profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU');
         }
         
         // Redirect to mentors page after a longer delay to show the banner
@@ -324,8 +337,9 @@ const MenteeSignupPage = () => {
             </Box>
           )}
 
-          {/* Sign-up Form */}
-          <form onSubmit={handleSubmit}>
+          {/* Sign-up Form - Hidden after successful signup */}
+          {!showSuccessBanner && (
+            <form onSubmit={handleSubmit}>
             <Box sx={{ mb: 3 }}>
               {/* First Name and Last Name - Side by Side */}
               <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -406,6 +420,37 @@ const MenteeSignupPage = () => {
                 error={!!fieldErrors.phone}
                 helperText={fieldErrors.phone || "Format: 050-1234567"}
               />
+
+              {/* Profile Picture Selection */}
+              <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 3, textAlign: 'center' }}>
+                  Choose Your Profile Picture
+                </Typography>
+                
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                  <Avatar
+                    src={formData.profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU'}
+                    alt="Profile Preview"
+                    sx={{ 
+                      width: 120, 
+                      height: 120, 
+                      border: '3px solid',
+                      borderColor: 'primary.light',
+                      mx: 'auto',
+                      mb: 2
+                    }}
+                  />
+                </Box>
+                
+                <Button
+                  variant="outlined"
+                  onClick={() => setShowProfileImagePicker(true)}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  Choose Profile Picture
+                </Button>
+              </Box>
 
               {/* Description */}
               <TextField
@@ -493,8 +538,16 @@ const MenteeSignupPage = () => {
               </Button>
             </Box>
           </form>
+          )}
         </Paper>
       </Box>
+
+      {/* Profile Image Picker Dialog */}
+      <ProfileImagePicker
+        open={showProfileImagePicker}
+        onClose={() => setShowProfileImagePicker(false)}
+        onImageSelect={handleProfileImageSelect}
+      />
     </Container>
   );
 };

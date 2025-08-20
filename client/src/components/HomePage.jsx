@@ -46,10 +46,6 @@ function HomePage() {
       const userLastName = sessionStorage.getItem('userLastName');
       const userProfileImage = sessionStorage.getItem('userProfileImage');
       
-      console.log('HomePage: Found userId:', userId, 'userType:', userType);
-      console.log('HomePage: Found user name:', userFirstName, userLastName);
-      console.log('HomePage: Found profile image:', userProfileImage);
-      
       if (userId) {
         setCurrentUser(prev => ({ 
           ...prev, 
@@ -57,7 +53,7 @@ function HomePage() {
           userType: userType || 'mentor', // Default to mentor if not specified
           firstName: userFirstName || 'User',
           lastName: userLastName || 'Name',
-          profileImage: userProfileImage || null
+          profileImage: userProfileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU'
         }));
       }
     };
@@ -67,7 +63,6 @@ function HomePage() {
 
     // Listen for custom profile update events
     const handleProfileUpdate = () => {
-      console.log('HomePage: Profile update event received, refreshing user data');
       loadUserData(); // Reload user data
     };
 
@@ -127,7 +122,6 @@ function HomePage() {
         if (data.success) {
           setMentorList(data.data);
           setfillteredMentorsList(data.data);
-          console.log("Mentors users count = ", data.count);
         } else {
           console.error("Failed to load mentors:", data.error);
         }

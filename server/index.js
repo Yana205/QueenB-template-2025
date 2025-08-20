@@ -9,16 +9,8 @@ const path = require('path');
 // Load environment variables FIRST
 dotenv.config();
 
-// Validate required environment variables
-const requiredEnvVars = ['JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-  console.error('📝 Please create a .env file based on env.example');
-  console.error('🔑 Generate a JWT secret with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
-  process.exit(1);
-}
+// Validate required environment variables (if any)
+// const requiredEnvVars = ['JWT_SECRET']; // Commented out - not needed for basic functionality
 
 // Import database connection
 const { connectDB } = require('./config/database');

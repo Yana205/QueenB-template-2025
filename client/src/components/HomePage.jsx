@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  AppBar,
-  Toolbar,
-  Button,
   Avatar,
   IconButton,
   Menu,
@@ -244,9 +241,12 @@ function HomePage() {
             gap: 5,
           }}
         >
-          {currentUser.userType === "mentee" && <WelcomeTitleForMentee menteeName={currentUser.firstName}/>}
-          {currentUser.userType === "mentor" && <WelcomeTitleForMentor mentorName={currentUser.firstName}/>}
-
+          {currentUser.userType === "mentee" && (
+            <WelcomeTitleForMentee menteeName={currentUser.firstName} />
+          )}
+          {currentUser.userType === "mentor" && (
+            <WelcomeTitleForMentor mentorName={currentUser.firstName} />
+          )}
 
           <SearchBar handelSearchClick={handelSearchClick} />
 

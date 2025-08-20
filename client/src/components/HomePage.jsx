@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Box, 
-  Typography, 
-  AppBar, 
-  Toolbar, 
-  Button, 
+import {
+  Box,
+  Typography,
+  AppBar,
+  Toolbar,
+  Button,
   Avatar,
   IconButton,
   Menu,
   MenuItem,
-  Container
+  Container,
 } from "@mui/material";
-import { 
+import {
   AccountCircle as AccountCircleIcon,
   Person as PersonIcon,
-  Logout as LogoutIcon
+  Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
 import SearchBar from "./SearchBar";
 import AllMentorsCards from "./AllMentorsCards";
+import WelcomeTitleForMentee from "./welcomeTitleForMentee";
+import WelcomeTitleForMentor from "./WelcomeTitleForMentor";
 
 function HomePage() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
-  
+
   //use state to get all mentors from the api
   const [mentorList, setMentorList] = useState([]);
   const [fillteredMentorsList, setfillteredMentorsList] = useState([]);
@@ -32,30 +34,31 @@ function HomePage() {
   // Get current user data from sessionStorage (set after signup)
   const [currentUser, setCurrentUser] = useState({
     id: null,
-    firstName: 'User',
-    lastName: 'Name',
-    profileImage: null
+    firstName: "User",
+    lastName: "Name",
+    profileImage: null,
+    userType: null,
   });
 
   useEffect(() => {
     // Get complete user data from sessionStorage (set after login)
-    const userId = sessionStorage.getItem('currentUserId');
-    const userType = sessionStorage.getItem('userType');
-    const userFirstName = sessionStorage.getItem('userFirstName');
-    const userLastName = sessionStorage.getItem('userLastName');
-    const userProfileImage = sessionStorage.getItem('userProfileImage');
-    
-    console.log('HomePage: Found userId:', userId, 'userType:', userType);
-    console.log('HomePage: Found user name:', userFirstName, userLastName);
-    
+    const userId = sessionStorage.getItem("currentUserId");
+    const userType = sessionStorage.getItem("userType");
+    const userFirstName = sessionStorage.getItem("userFirstName");
+    const userLastName = sessionStorage.getItem("userLastName");
+    const userProfileImage = sessionStorage.getItem("userProfileImage");
+
+    console.log("HomePage: Found userId:", userId, "userType:", userType);
+    console.log("HomePage: Found user name:", userFirstName, userLastName);
+
     if (userId) {
-      setCurrentUser(prev => ({ 
-        ...prev, 
+      setCurrentUser((prev) => ({
+        ...prev,
         id: userId,
-        userType: userType || 'mentor', // Default to mentor if not specified
-        firstName: userFirstName || 'User',
-        lastName: userLastName || 'Name',
-        profileImage: userProfileImage || null
+        userType: userType || "mentor", // Default to mentor if not specified
+        firstName: userFirstName || "User",
+        lastName: userLastName || "Name",
+        profileImage: userProfileImage || null,
       }));
     }
   }, []);
@@ -71,30 +74,30 @@ function HomePage() {
   const handleProfileClick = () => {
     handleProfileMenuClose();
     // Navigate to profile page with user ID and type
-    const userType = sessionStorage.getItem('userType') || 'mentor';
+    const userType = sessionStorage.getItem("userType") || "mentor";
     navigate(`/profile/${userType}/${currentUser.id}`);
   };
 
   const handleLogout = () => {
     handleProfileMenuClose();
-    
+
     // Clear all user data from sessionStorage
-    sessionStorage.removeItem('currentUserId');
-    sessionStorage.removeItem('userType');
-    sessionStorage.removeItem('userFirstName');
-    sessionStorage.removeItem('userLastName');
-    sessionStorage.removeItem('userProfileImage');
-    
+    sessionStorage.removeItem("currentUserId");
+    sessionStorage.removeItem("userType");
+    sessionStorage.removeItem("userFirstName");
+    sessionStorage.removeItem("userLastName");
+    sessionStorage.removeItem("userProfileImage");
+
     // Reset current user state
     setCurrentUser({
       id: null,
-      firstName: 'User',
-      lastName: 'Name',
-      profileImage: null
+      firstName: "User",
+      lastName: "Name",
+      profileImage: null,
     });
-    
+
     // Redirect to home page
-    navigate('/');
+    navigate("/");
   };
 
   //fetch all mentors into allMentors list
@@ -119,7 +122,7 @@ function HomePage() {
     fetchMentors();
   }, []);
 
-  // state for the currently filltered list of mentors that display 
+  // state for the currently filltered list of mentors that display
   const handelSearchClick = (searchData) => {
     if (!mentorList || mentorList.length === 0) return;
     if (searchData.category === "" && searchData.text === "") {
@@ -152,27 +155,35 @@ function HomePage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ minHeight: "100vh" }}>
       {/* Header */}
-      <Box sx={{ 
-        py: 2, 
-        px: 3, 
-        bgcolor: 'background.paper',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        boxShadow: 1
-      }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          maxWidth: 'lg',
-          mx: 'auto'
-        }}>
-          <Typography variant="h6" component="div" sx={{ color: 'text.primary' }}>
+      <Box
+        sx={{
+          py: 2,
+          px: 3,
+          bgcolor: "background.paper",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          boxShadow: 1,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            maxWidth: "lg",
+            mx: "auto",
+          }}
+        >
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ color: "text.primary" }}
+          >
             QueenB Mentorship
           </Typography>
-          
+
           {/* Profile Menu */}
           {currentUser.id && (
             <>
@@ -181,34 +192,37 @@ function HomePage() {
                 edge="end"
                 onClick={handleProfileMenuOpen}
                 sx={{
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.dark' }
+                  bgcolor: "primary.main",
+                  color: "white",
+                  "&:hover": { bgcolor: "primary.dark" },
                 }}
               >
                 {currentUser.profileImage ? (
-                  <Avatar src={currentUser.profileImage} sx={{ width: 32, height: 32 }} />
+                  <Avatar
+                    src={currentUser.profileImage}
+                    sx={{ width: 32, height: 32 }}
+                  />
                 ) : (
                   <AccountCircleIcon />
                 )}
               </IconButton>
-              
+
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleProfileMenuClose}
                 anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'right',
+                  vertical: "bottom",
+                  horizontal: "right",
                 }}
                 transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
+                  vertical: "top",
+                  horizontal: "right",
                 }}
               >
                 <MenuItem onClick={handleProfileClick}>
                   <PersonIcon sx={{ mr: 1 }} />
-                  My Profile ({currentUser.userType || 'mentor'})
+                  My Profile ({currentUser.userType || "mentor"})
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <LogoutIcon sx={{ mr: 1 }} />
@@ -230,7 +244,9 @@ function HomePage() {
             gap: 5,
           }}
         >
-          <Typography variant="h2">Find Your Mentor</Typography>
+          {currentUser.userType === "mentee" && <WelcomeTitleForMentee menteeName={currentUser.firstName}/>}
+          {currentUser.userType === "mentor" && <WelcomeTitleForMentor mentorName={currentUser.firstName}/>}
+
 
           <SearchBar handelSearchClick={handelSearchClick} />
 

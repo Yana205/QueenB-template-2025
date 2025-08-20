@@ -1,3 +1,6 @@
+
+<img width="1184" height="770" alt="logoB" src="https://github.com/user-attachments/assets/6d6e5bc9-7e00-46ce-9943-ed2c936fa915" />
+
 # BeeMentor by QueenB - Mentor-Mentee Matching Platform
 A full-stack web application for connecting mentors and mentees in the tech industry.
 

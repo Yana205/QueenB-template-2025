@@ -1,4 +1,4 @@
-# QueenB - Mentor-Mentee Matching Platform
+# BeeMentor by QueenB - Mentor-Mentee Matching Platform
 A full-stack web application for connecting mentors and mentees in the tech industry.
 
 Built with Node.js, Express, React, Material UI, and MongoDB.

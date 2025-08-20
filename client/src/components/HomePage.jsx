@@ -98,7 +98,7 @@ function HomePage() {
   };
 
   //fetch all mentors into allMentors list
-  //it couse only one call by using useEffect with deppendance -[]
+  //runs only once because of the empty dependency array in useEffect -[]
   useEffect(() => {
     const fetchMentors = async () => {
       try {
@@ -119,6 +119,7 @@ function HomePage() {
     fetchMentors();
   }, []);
 
+  // state for the currently filltered list of mentors that display 
   const handelSearchClick = (searchData) => {
     if (!mentorList || mentorList.length === 0) return;
     if (searchData.category === "" && searchData.text === "") {
@@ -132,19 +133,24 @@ function HomePage() {
         return mentor.technologies.some((tech) =>
           tech.toLowerCase().includes(searchValue)
         );
-        
       } else if (searchData.category === "fullName") {
         const fullName = `${mentor.firstName} ${mentor.lastName}`.toLowerCase();
         return fullName.includes(searchValue);
-
       } else if (searchData.category === "yearsOfExperience") {
         return String(mentor.yearsOfExperience) === searchValue;
       }
       return;
     });
 
+    if (filltered.length === 0) {
+      alert("No mentors found for your search");
+      setfillteredMentorsList(mentorList);
+      return;
+    }
+
     setfillteredMentorsList(filltered);
   };
+
   return (
     <Box sx={{ minHeight: '100vh' }}>
       {/* Header */}

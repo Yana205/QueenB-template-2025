@@ -155,6 +155,31 @@ router.post('/', async (req, res) => {
 // ==========================================
 router.put('/:id', async (req, res) => {
   try {
+    console.log('🔄 Attempting to update mentor with ID:', req.params.id);
+    console.log('📝 Update data received:', req.body);
+    
+    // Validate the mentor ID
+    if (!req.params.id || req.params.id.length !== 24) {
+      console.log('❌ Invalid mentor ID format:', req.params.id);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid mentor ID format'
+      });
+    }
+    
+    // Check if mentor exists before updating
+    const existingMentor = await Mentor.findById(req.params.id);
+    if (!existingMentor) {
+      console.log('❌ Mentor not found for update:', req.params.id);
+      return res.status(404).json({
+        success: false,
+        error: 'Mentor not found'
+      });
+    }
+    
+    console.log('✅ Found mentor to update:', existingMentor.firstName, existingMentor.lastName);
+    
+    // Perform the update
     const mentor = await Mentor.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -165,11 +190,14 @@ router.put('/:id', async (req, res) => {
     );
     
     if (!mentor) {
-      return res.status(404).json({
+      console.log('❌ Failed to update mentor:', req.params.id);
+      return res.status(500).json({
         success: false,
-        error: 'Mentor not found'
+        error: 'Failed to update mentor'
       });
     }
+    
+    console.log('✅ Mentor updated successfully:', mentor.firstName, mentor.lastName);
     
     res.json({
       success: true,
@@ -177,10 +205,31 @@ router.put('/:id', async (req, res) => {
       message: 'Mentor updated successfully!'
     });
   } catch (error) {
-    console.error('Error updating mentor:', error);
+    console.error('❌ Error updating mentor:', error);
+    
+    // Provide more specific error messages
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      console.log('❌ Validation errors:', validationErrors);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: validationErrors
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      console.log('❌ Cast error - invalid data type:', error.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid data format'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to update mentor'
+      error: 'Failed to update mentor',
+      details: error.message
     });
   }
 });

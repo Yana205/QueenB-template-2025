@@ -17,10 +17,11 @@ import {
   MenuItem,
   Grid
 } from '@mui/material';
-import AvatarPicker from './AvatarPicker';
-import { defaultAvatar } from './avatarOptions';
+
 import { useFormValidation } from '../../hook/useFormValidation';
 import SuccessBanner from '../ui/SuccessBanner';
+import ProfileImagePicker from './ProfileImagePicker';
+
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import WorkIcon from '@mui/icons-material/Work';
@@ -37,11 +38,11 @@ const MentorSignupPage = () => {
     email: '',
     password: '',
     phone: '',
-    yearsOfExperience: '',
+    yearsOfExperience: 0,
     expertise: [],
     description: '',
     availability: 'flexible',
-    avatar: defaultAvatar, // Add default avatar
+    avatar: '', // Will be set by avatar picker
     linkedinUrl: '', // LinkedIn profile URL
     githubUrl: '', // GitHub profile URL
     websiteUrl: '', // Personal website URL
@@ -52,6 +53,7 @@ const MentorSignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
   const [localError, setLocalError] = useState(''); // Local error state for server errors
+  const [showProfileImagePicker, setShowProfileImagePicker] = useState(false);
   
   // Use the reusable validation hook
   const {
@@ -81,10 +83,9 @@ const MentorSignupPage = () => {
     'Go', 'Scala', 'Elixir', 'GraphQL', 'REST APIs', 'Microservices'
   ];
 
-  // Experience levels
-  const experienceLevels = [
-    '1-2 years', '3-5 years', '5-8 years', '8-12 years', '12+ years'
-  ];
+
+
+
 
   // Availability options
   const availabilityOptions = [
@@ -166,11 +167,11 @@ const MentorSignupPage = () => {
     if (success) setSuccessMessage('');
   };
 
-  // Handle avatar selection
-  const handleAvatarSelect = (avatarUrl) => {
+  // Handle profile image selection
+  const handleProfileImageSelect = (imageUrl) => {
     setFormData(prev => ({
       ...prev,
-      avatar: avatarUrl
+      avatar: imageUrl
     }));
     if (generalError) setError('');
     if (success) setSuccessMessage('');
@@ -216,22 +217,46 @@ const MentorSignupPage = () => {
   const validateForm = () => {
     let isValid = true;
     
+    console.log('🔍 Validating form fields...');
+    console.log('Form data:', formData);
+    
     // Validate all required fields
-    if (!validateRequiredField(formData.firstName, 'firstName')) isValid = false;
-    if (!validateRequiredField(formData.lastName, 'lastName')) isValid = false;
-    if (!validateEmailField(formData.email)) isValid = false;
-    if (!validatePasswordField(formData.password)) isValid = false;
-    if (!validatePhoneField(formData.phone)) isValid = false;
-    if (!validateRequiredField(formData.yearsOfExperience, 'yearsOfExperience')) isValid = false;
+    if (!validateRequiredField(formData.firstName, 'firstName')) {
+      console.log('❌ First name validation failed');
+      isValid = false;
+    }
+    if (!validateRequiredField(formData.lastName, 'lastName')) {
+      console.log('❌ Last name validation failed');
+      isValid = false;
+    }
+    if (!validateEmailField(formData.email)) {
+      console.log('❌ Email validation failed');
+      isValid = false;
+    }
+    if (!validatePasswordField(formData.password)) {
+      console.log('❌ Password validation failed');
+      isValid = false;
+    }
+    if (!validatePhoneField(formData.phone)) {
+      console.log('❌ Phone validation failed');
+      isValid = false;
+    }
+    if (!validateRequiredField(formData.yearsOfExperience, 'yearsOfExperience')) {
+      console.log('❌ Years of experience validation failed');
+      isValid = false;
+    }
     
     // Special validation for expertise array
     if (!formData.expertise || formData.expertise.length === 0) {
+      console.log('❌ Expertise validation failed - no technologies selected');
       setFieldError('expertise', 'Please select at least one area of expertise');
       isValid = false;
     } else {
+      console.log('✅ Expertise validation passed');
       clearFieldError('expertise');
     }
     
+    console.log('Form validation result:', isValid);
     return isValid;
   };
 
@@ -239,10 +264,13 @@ const MentorSignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('🔍 Form validation check...');
     if (!isFormValid()) {
+      console.log('❌ Form validation failed');
       setError('Please fix the errors above before submitting');
       return;
     }
+    console.log('✅ Form validation passed, proceeding with submission...');
 
     setIsLoading(true);
     clearErrors();
@@ -255,11 +283,11 @@ const MentorSignupPage = () => {
         email: formData.email.toLowerCase(),
         password: formData.password,
         phone: formData.phone,
-        yearsOfExperience: parseInt(formData.yearsOfExperience.split('-')[0]), // Convert "1-2 years" to 1
+        yearsOfExperience: parseInt(formData.yearsOfExperience) || 0, // Send as integer
         technologies: formData.expertise, // Map expertise to technologies
         description: formData.description || '',
         availability: 'available', // Map to valid enum value
-        profileImage: formData.avatar, // Add the selected avatar
+        profileImage: formData.avatar || undefined, // Use undefined if no avatar (server will use default)
         linkedinUrl: formData.linkedinUrl || undefined, // LinkedIn URL
         githubUrl: formData.githubUrl || undefined, // GitHub URL
         websiteUrl: formData.websiteUrl || undefined, // Personal website
@@ -281,12 +309,13 @@ const MentorSignupPage = () => {
       const result = await response.json();
 
       if (response.ok) {
-        const result = await response.json();
+        console.log('✅ Mentor created successfully!', result);
         setSuccessMessage(result.message || 'Mentor registered successfully!');
         setShowSuccessBanner(true);
         
         // Store complete user data for profile access and display
         if (result.data && result.data._id) {
+          console.log('💾 Storing user data in sessionStorage');
           sessionStorage.setItem('currentUserId', result.data._id);
           sessionStorage.setItem('userType', 'mentor');
           sessionStorage.setItem('userFirstName', result.data.firstName);
@@ -301,21 +330,21 @@ const MentorSignupPage = () => {
           email: '',
           password: '',
           phone: '',
-          yearsOfExperience: '',
+          yearsOfExperience: 0,
           expertise: [],
           description: '',
           availability: 'flexible',
-          avatar: defaultAvatar,
+          avatar: '',
           linkedinUrl: '',
           githubUrl: '',
           websiteUrl: '',
           twitterUrl: ''
         });
         
-        // Don't clear errors immediately - let user see success message first
-        
+        console.log('🔄 Redirecting to mentors page in 2 seconds...');
         // Redirect to mentors page to see all mentors
         setTimeout(() => {
+          console.log('🚀 Navigating to /mentors');
           navigate('/mentors?signupSuccess=1', { replace: true });
         }, 2000);
       } else {
@@ -591,7 +620,7 @@ const MentorSignupPage = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     name="firstName"
-                    label="First Name *"
+                    label="First Name "
                     value={formData.firstName}
                     onChange={handleInputChange}
                     error={!!fieldErrors.firstName}
@@ -605,7 +634,7 @@ const MentorSignupPage = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     name="lastName"
-                    label="Last Name *"
+                    label="Last Name "
                     value={formData.lastName}
                     onChange={handleInputChange}
                     error={!!fieldErrors.lastName}
@@ -619,7 +648,7 @@ const MentorSignupPage = () => {
                 <Grid item xs={12}>
                   <TextField
                     name="email"
-                    label="Email Address *"
+                    label="Email Address "
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -634,7 +663,7 @@ const MentorSignupPage = () => {
                 <Grid item xs={12}>
                   <TextField
                     name="password"
-                    label="Password *"
+                    label="Password "
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
@@ -649,7 +678,7 @@ const MentorSignupPage = () => {
                 <Grid item xs={12}>
                   <TextField
                     name="phone"
-                    label="Phone Number *"
+                    label="Phone Number "
                     value={formData.phone}
                     onChange={handleInputChange}
                     error={!!fieldErrors.phone}
@@ -661,19 +690,36 @@ const MentorSignupPage = () => {
               </Grid>
             </Box>
 
-            {/* Avatar Selection */}
+            {/* Profile Picture Selection */}
             <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
               <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Profile Picture
                 <AccountCircleIcon sx={{ color: 'primary.main' }} />
               </Typography>
-              <AvatarPicker
-                selectedAvatar={formData.avatar}
-                onAvatarSelect={handleAvatarSelect}
-                error={fieldErrors.avatar}
-                firstName={formData.firstName}
-                lastName={formData.lastName}
-              />
+              
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <img 
+                  src={formData.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU'} 
+                  alt="Profile Preview" 
+                  style={{ 
+                    width: 120, 
+                    height: 120, 
+                    borderRadius: '50%',
+                    border: '3px solid',
+                    borderColor: 'primary.light',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Box>
+              
+              <Button
+                variant="outlined"
+                onClick={() => setShowProfileImagePicker(true)}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                Choose Profile Picture
+              </Button>
             </Box>
 
             {/* Professional Information Section */}
@@ -686,22 +732,17 @@ const MentorSignupPage = () => {
               <Grid container spacing={2}>
                 {/* Years of Experience */}
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Years of Experience *</InputLabel>
-                    <Select
-                      name="yearsOfExperience"
-                      value={formData.yearsOfExperience}
-                      onChange={handleInputChange}
-                      label="Years of Experience *"
-                      required
-                    >
-                      {experienceLevels.map((level) => (
-                        <MenuItem key={level} value={level}>
-                          {level}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    name="yearsOfExperience"
+                    label="Years of Experience "
+                    value={formData.yearsOfExperience}
+                    onChange={handleInputChange}
+                    required
+                    inputProps={{ min: 0, max: 50 }}
+                    helperText="Enter the number of years (e.g., 5)"
+                  />
                 </Grid>
                 
                 {/* Expertise Areas */}
@@ -882,6 +923,13 @@ const MentorSignupPage = () => {
           </form>
         </Paper>
       </Box>
+
+      {/* Profile Image Picker Dialog */}
+      <ProfileImagePicker
+        open={showProfileImagePicker}
+        onClose={() => setShowProfileImagePicker(false)}
+        onImageSelect={handleProfileImageSelect}
+      />
     </Container>
   );
 };

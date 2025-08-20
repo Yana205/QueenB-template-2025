@@ -39,25 +39,44 @@ function HomePage() {
 
   useEffect(() => {
     // Get complete user data from sessionStorage (set after login)
-    const userId = sessionStorage.getItem('currentUserId');
-    const userType = sessionStorage.getItem('userType');
-    const userFirstName = sessionStorage.getItem('userFirstName');
-    const userLastName = sessionStorage.getItem('userLastName');
-    const userProfileImage = sessionStorage.getItem('userProfileImage');
+    const loadUserData = () => {
+      const userId = sessionStorage.getItem('currentUserId');
+      const userType = sessionStorage.getItem('userType');
+      const userFirstName = sessionStorage.getItem('userFirstName');
+      const userLastName = sessionStorage.getItem('userLastName');
+      const userProfileImage = sessionStorage.getItem('userProfileImage');
+      
+      console.log('HomePage: Found userId:', userId, 'userType:', userType);
+      console.log('HomePage: Found user name:', userFirstName, userLastName);
+      console.log('HomePage: Found profile image:', userProfileImage);
+      
+      if (userId) {
+        setCurrentUser(prev => ({ 
+          ...prev, 
+          id: userId,
+          userType: userType || 'mentor', // Default to mentor if not specified
+          firstName: userFirstName || 'User',
+          lastName: userLastName || 'Name',
+          profileImage: userProfileImage || null
+        }));
+      }
+    };
+
+    // Load user data initially
+    loadUserData();
+
+    // Listen for custom profile update events
+    const handleProfileUpdate = () => {
+      console.log('HomePage: Profile update event received, refreshing user data');
+      loadUserData(); // Reload user data
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
     
-    console.log('HomePage: Found userId:', userId, 'userType:', userType);
-    console.log('HomePage: Found user name:', userFirstName, userLastName);
-    
-    if (userId) {
-      setCurrentUser(prev => ({ 
-        ...prev, 
-        id: userId,
-        userType: userType || 'mentor', // Default to mentor if not specified
-        firstName: userFirstName || 'User',
-        lastName: userLastName || 'Name',
-        profileImage: userProfileImage || null
-      }));
-    }
+    // Cleanup
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, []);
 
   const handleProfileMenuOpen = (event) => {

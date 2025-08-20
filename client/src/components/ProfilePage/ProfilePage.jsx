@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ProfileImagePicker from '../auth/ProfileImagePicker';
+
 import {
   Container,
   Paper,
@@ -9,7 +11,6 @@ import {
   Button,
   Grid,
   Avatar,
-  IconButton,
   Divider,
   Alert,
   Dialog,
@@ -23,9 +24,7 @@ import {
   Select,
   MenuItem,
   CircularProgress,
-  Snackbar,
-  Tabs,
-  Tab
+  Snackbar
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -38,9 +37,9 @@ import {
   School as SchoolIcon,
   Search as SearchIcon,
   ArrowBack as ArrowBackIcon,
-  Home as HomeIcon
+  AccountCircle as AccountCircleIcon
 } from '@mui/icons-material';
-import { avatarOptions, generateCustomAvatar } from '../auth/avatarOptions';
+
 
 const ProfilePage = () => {
   const { id, userType } = useParams();
@@ -81,8 +80,9 @@ const ProfilePage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [showProfileImagePicker, setShowProfileImagePicker] = useState(false);
+
+
   
   // Available options
   const availableTechnologies = [
@@ -212,13 +212,16 @@ const ProfilePage = () => {
     }
   };
 
-  const handleAvatarSelect = (avatarUrl) => {
+  const handleProfileImageSelect = (imageUrl) => {
     setProfileData(prev => ({
       ...prev,
-      profileImage: avatarUrl
+      profileImage: imageUrl
     }));
-    setShowAvatarPicker(false);
   };
+
+
+
+
 
   const handleSave = async () => {
     try {
@@ -230,8 +233,44 @@ const ProfilePage = () => {
         ...profileData,
         ...(currentUserType === 'mentor' ? mentorData : menteeData)
       };
+
+      // Sanitize data to ensure proper format
+      if (currentUserType === 'mentor') {
+        console.log('🔧 Before sanitization:', {
+          yearsOfExperience: dataToSend.yearsOfExperience,
+          availability: dataToSend.availability
+        });
+        
+        // Ensure yearsOfExperience is a valid string
+        if (dataToSend.yearsOfExperience && typeof dataToSend.yearsOfExperience === 'number') {
+          // Convert number to appropriate string range
+          const years = dataToSend.yearsOfExperience;
+          if (years <= 2) dataToSend.yearsOfExperience = '1-2 years';
+          else if (years <= 5) dataToSend.yearsOfExperience = '3-5 years';
+          else if (years <= 8) dataToSend.yearsOfExperience = '5-8 years';
+          else if (years <= 12) dataToSend.yearsOfExperience = '8-12 years';
+          else dataToSend.yearsOfExperience = '12+ years';
+          
+          console.log('🔧 Converted yearsOfExperience from', years, 'to', dataToSend.yearsOfExperience);
+        }
+        
+        // Ensure availability is valid
+        if (dataToSend.availability && !['available', 'part-time', 'full-time', 'flexible'].includes(dataToSend.availability)) {
+          dataToSend.availability = 'available';
+          console.log('🔧 Fixed invalid availability to:', dataToSend.availability);
+        }
+        
+        console.log('🔧 After sanitization:', {
+          yearsOfExperience: dataToSend.yearsOfExperience,
+          availability: dataToSend.availability
+        });
+      }
       
       const endpoint = currentUserType === 'mentor' ? `/api/mentors/${id}` : `/api/mentees/${id}`;
+      
+      console.log('💾 Attempting to save profile:', { id, currentUserType, endpoint });
+      console.log('📤 Data being sent:', dataToSend);
+      
       const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
@@ -240,18 +279,31 @@ const ProfilePage = () => {
         body: JSON.stringify(dataToSend)
       });
       
+      console.log('💾 Save response status:', response.status);
       const result = await response.json();
+      console.log('💾 Save response result:', result);
       
       if (result.success) {
         setSuccess('Profile updated successfully!');
         setIsEditing(false);
+        
+        // Update session storage with new profile data
+        if (currentUserType === 'mentor') {
+          sessionStorage.setItem('userProfileImage', result.data.profileImage || '');
+          
+          // Dispatch custom event to notify HomePage to refresh
+          window.dispatchEvent(new CustomEvent('profileUpdated'));
+          console.log('📢 Dispatched profileUpdated event');
+        }
+        
         // Refresh profile data
         await fetchProfileData();
       } else {
         setError(result.error || 'Failed to update profile');
+        console.error('❌ Save failed:', result.error);
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('❌ Error updating profile:', error);
       setError('Network error. Please try again.');
     } finally {
       setIsSaving(false);
@@ -385,44 +437,46 @@ const ProfilePage = () => {
       {/* Profile Form */}
       <Paper elevation={2} sx={{ p: 4 }}>
         {/* Avatar Section */}
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Box sx={{ position: 'relative', display: 'inline-block' }}>
-            <Avatar
-              src={profileData.profileImage || generateCustomAvatar(profileData.firstName, profileData.lastName)}
-              alt="Profile"
-              sx={{ 
-                width: 120, 
-                height: 120, 
-                border: '3px solid',
-                borderColor: 'primary.light',
-                boxShadow: 3
-              }}
-            />
-            {isEditing && (
-              <IconButton
-                onClick={() => setShowAvatarPicker(true)}
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.dark' }
-                }}
-              >
-                <EditIcon />
-              </IconButton>
-            )}
-          </Box>
+        <Box sx={{ 
+          mb: 4, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          width: '100%'
+        }}>
+          <Avatar
+            src={profileData.profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU'}
+            alt="Profile"
+            sx={{ 
+              width: 120, 
+              height: 120, 
+              border: '3px solid',
+              borderColor: 'primary.light',
+              boxShadow: 3,
+              mb: 2,
+              mx: 'auto'
+            }}
+          />
           
           {isEditing && (
-            <Button
-              variant="outlined"
-              onClick={() => setShowAvatarPicker(true)}
-              sx={{ mt: 2 }}
-            >
-              Change Avatar
-            </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Button
+                variant="contained"
+                onClick={() => setShowProfileImagePicker(true)}
+                sx={{ 
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}
+                startIcon={<AccountCircleIcon />}
+              >
+                Change Profile Picture
+              </Button>
+            </Box>
           )}
         </Box>
 
@@ -740,49 +794,9 @@ const ProfilePage = () => {
         </Box>
       </Paper>
 
-      {/* Avatar Picker Dialog */}
-      <Dialog
-        open={showAvatarPicker}
-        onClose={() => setShowAvatarPicker(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Choose Your Avatar</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 2, mt: 2 }}>
-            {avatarOptions.map((avatar) => (
-              <Box
-                key={avatar.id}
-                onClick={() => handleAvatarSelect(avatar.url)}
-                sx={{
-                  cursor: 'pointer',
-                  p: 1,
-                  borderRadius: 2,
-                  border: 2,
-                  borderColor: profileData.profileImage === avatar.url ? 'primary.main' : 'divider',
-                  bgcolor: profileData.profileImage === avatar.url ? 'primary.light' : 'transparent',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: 'primary.light'
-                  }
-                }}
-              >
-                <Avatar
-                  src={avatar.url}
-                  alt={avatar.name}
-                  sx={{ width: 60, height: 60, mx: 'auto' }}
-                />
-                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
-                  {avatar.name}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowAvatarPicker(false)}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
+
+
+
 
       {/* Delete Account Confirmation Dialog */}
       <Dialog
@@ -825,6 +839,13 @@ const ProfilePage = () => {
           {success}
         </Alert>
       </Snackbar>
+
+      {/* Profile Image Picker Dialog */}
+      <ProfileImagePicker
+        open={showProfileImagePicker}
+        onClose={() => setShowProfileImagePicker(false)}
+        onImageSelect={handleProfileImageSelect}
+      />
     </Container>
   );
 };

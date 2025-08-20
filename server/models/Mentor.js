@@ -62,12 +62,10 @@ const mentorSchema = new mongoose.Schema({
   },
   
   yearsOfExperience: {
-    type: String,
+    type: Number,
     required: [true, 'Years of experience is required'],
-    enum: {
-      values: ['1-2 years', '3-5 years', '5-8 years', '8-12 years', '12+ years'],
-      message: 'Please select a valid experience range'
-    }
+    min: [0, 'Years of experience cannot be negative'],
+    max: [50, 'Years of experience cannot exceed 50 years']
   },
   
   description: {

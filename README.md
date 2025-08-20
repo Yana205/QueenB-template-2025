@@ -19,7 +19,7 @@ QueenB is a platform that connects experienced tech professionals (mentors) with
 - **Modern UI**: Beautiful, responsive interface built with Material UI
 - **RESTful API**: Well-structured backend API with Express.js
 - **Database Integration**: MongoDB Atlas support with fallback to local data
-- **Enhanced Security**: JWT authentication, rate limiting, and security headers
+- to be **Enhanced Security**: JWT authentication, rate limiting, and security headers
 - **Error Handling**: Comprehensive error handling and logging
 - **CORS Configuration**: Proper cross-origin resource sharing setup
 - **Responsive Design**: Works seamlessly on desktop and mobile devices

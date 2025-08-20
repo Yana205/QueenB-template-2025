@@ -17,10 +17,11 @@ import {
   MenuItem,
   Grid
 } from '@mui/material';
-import AvatarPicker from './AvatarPicker';
-import { defaultAvatar } from './avatarOptions';
+
 import { useFormValidation } from '../../hook/useFormValidation';
 import SuccessBanner from '../ui/SuccessBanner';
+import ProfileImagePicker from './ProfileImagePicker';
+
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import WorkIcon from '@mui/icons-material/Work';
@@ -37,11 +38,11 @@ const MentorSignupPage = () => {
     email: '',
     password: '',
     phone: '',
-    yearsOfExperience: '',
+    yearsOfExperience: 0,
     expertise: [],
     description: '',
     availability: 'flexible',
-    avatar: defaultAvatar, // Add default avatar
+    avatar: '', // Will be set by avatar picker
     linkedinUrl: '', // LinkedIn profile URL
     githubUrl: '', // GitHub profile URL
     websiteUrl: '', // Personal website URL
@@ -51,6 +52,8 @@ const MentorSignupPage = () => {
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [localError, setLocalError] = useState(''); // Local error state for server errors
+  const [showProfileImagePicker, setShowProfileImagePicker] = useState(false);
   
   // Use the reusable validation hook
   const {
@@ -80,10 +83,9 @@ const MentorSignupPage = () => {
     'Go', 'Scala', 'Elixir', 'GraphQL', 'REST APIs', 'Microservices'
   ];
 
-  // Experience levels
-  const experienceLevels = [
-    '1-2 years', '3-5 years', '5-8 years', '8-12 years', '12+ years'
-  ];
+
+
+
 
   // Availability options
   const availabilityOptions = [
@@ -123,8 +125,12 @@ const MentorSignupPage = () => {
       clearFieldError(name);
     }
     
-    // Clear any previous general errors/success messages
-    if (generalError) setError('');
+    // Clear local error when user types in email field
+    if (name === 'email' && localError) {
+      setLocalError('');
+    }
+    
+    // Don't clear general errors when typing - let server errors stay visible
     if (success) setSuccessMessage('');
     
     // Real-time validation for specific fields
@@ -161,11 +167,11 @@ const MentorSignupPage = () => {
     if (success) setSuccessMessage('');
   };
 
-  // Handle avatar selection
-  const handleAvatarSelect = (avatarUrl) => {
+  // Handle profile image selection
+  const handleProfileImageSelect = (imageUrl) => {
     setFormData(prev => ({
       ...prev,
-      avatar: avatarUrl
+      avatar: imageUrl
     }));
     if (generalError) setError('');
     if (success) setSuccessMessage('');
@@ -211,22 +217,46 @@ const MentorSignupPage = () => {
   const validateForm = () => {
     let isValid = true;
     
+    console.log('🔍 Validating form fields...');
+    console.log('Form data:', formData);
+    
     // Validate all required fields
-    if (!validateRequiredField(formData.firstName, 'firstName')) isValid = false;
-    if (!validateRequiredField(formData.lastName, 'lastName')) isValid = false;
-    if (!validateEmailField(formData.email)) isValid = false;
-    if (!validatePasswordField(formData.password)) isValid = false;
-    if (!validatePhoneField(formData.phone)) isValid = false;
-    if (!validateRequiredField(formData.yearsOfExperience, 'yearsOfExperience')) isValid = false;
+    if (!validateRequiredField(formData.firstName, 'firstName')) {
+      console.log('❌ First name validation failed');
+      isValid = false;
+    }
+    if (!validateRequiredField(formData.lastName, 'lastName')) {
+      console.log('❌ Last name validation failed');
+      isValid = false;
+    }
+    if (!validateEmailField(formData.email)) {
+      console.log('❌ Email validation failed');
+      isValid = false;
+    }
+    if (!validatePasswordField(formData.password)) {
+      console.log('❌ Password validation failed');
+      isValid = false;
+    }
+    if (!validatePhoneField(formData.phone)) {
+      console.log('❌ Phone validation failed');
+      isValid = false;
+    }
+    if (!validateRequiredField(formData.yearsOfExperience, 'yearsOfExperience')) {
+      console.log('❌ Years of experience validation failed');
+      isValid = false;
+    }
     
     // Special validation for expertise array
     if (!formData.expertise || formData.expertise.length === 0) {
+      console.log('❌ Expertise validation failed - no technologies selected');
       setFieldError('expertise', 'Please select at least one area of expertise');
       isValid = false;
     } else {
+      console.log('✅ Expertise validation passed');
       clearFieldError('expertise');
     }
     
+    console.log('Form validation result:', isValid);
     return isValid;
   };
 
@@ -234,10 +264,13 @@ const MentorSignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('🔍 Form validation check...');
     if (!isFormValid()) {
+      console.log('❌ Form validation failed');
       setError('Please fix the errors above before submitting');
       return;
     }
+    console.log('✅ Form validation passed, proceeding with submission...');
 
     setIsLoading(true);
     clearErrors();
@@ -250,11 +283,11 @@ const MentorSignupPage = () => {
         email: formData.email.toLowerCase(),
         password: formData.password,
         phone: formData.phone,
-        yearsOfExperience: parseInt(formData.yearsOfExperience.split('-')[0]), // Convert "1-2 years" to 1
+        yearsOfExperience: parseInt(formData.yearsOfExperience) || 0, // Send as integer
         technologies: formData.expertise, // Map expertise to technologies
         description: formData.description || '',
         availability: 'available', // Map to valid enum value
-        profileImage: formData.avatar, // Add the selected avatar
+        profileImage: formData.avatar || undefined, // Use undefined if no avatar (server will use default)
         linkedinUrl: formData.linkedinUrl || undefined, // LinkedIn URL
         githubUrl: formData.githubUrl || undefined, // GitHub URL
         websiteUrl: formData.websiteUrl || undefined, // Personal website
@@ -276,8 +309,19 @@ const MentorSignupPage = () => {
       const result = await response.json();
 
       if (response.ok) {
+        console.log('✅ Mentor created successfully!', result);
         setSuccessMessage(result.message || 'Mentor registered successfully!');
         setShowSuccessBanner(true);
+        
+        // Store complete user data for profile access and display
+        if (result.data && result.data._id) {
+          console.log('💾 Storing user data in sessionStorage');
+          sessionStorage.setItem('currentUserId', result.data._id);
+          sessionStorage.setItem('userType', 'mentor');
+          sessionStorage.setItem('userFirstName', result.data.firstName);
+          sessionStorage.setItem('userLastName', result.data.lastName);
+          sessionStorage.setItem('userProfileImage', result.data.profileImage || '');
+        }
         
         // Clear form data
         setFormData({
@@ -286,26 +330,31 @@ const MentorSignupPage = () => {
           email: '',
           password: '',
           phone: '',
-          yearsOfExperience: '',
+          yearsOfExperience: 0,
           expertise: [],
           description: '',
           availability: 'flexible',
-          avatar: defaultAvatar,
+          avatar: '',
           linkedinUrl: '',
           githubUrl: '',
           websiteUrl: '',
           twitterUrl: ''
         });
         
-        // Clear all errors
-        clearErrors();
-        
-        // Redirect to success page or show success message
+        console.log('🔄 Redirecting to mentors page in 2 seconds...');
+        // Redirect to mentors page to see all mentors
         setTimeout(() => {
-          navigate('/?signupSuccess=1', { replace: true });
+          console.log('🚀 Navigating to /mentors');
+          navigate('/mentors?signupSuccess=1', { replace: true });
         }, 2000);
       } else {
-        setError(result.error || 'Failed to register mentor');
+        console.log('Server error response:', result);
+        console.log('Setting error to:', result.error);
+        const errorMessage = result.error || 'Failed to register mentor';
+        setError(errorMessage); // Set in hook
+        setLocalError(errorMessage); // Set in local state
+        console.log('Error state after setting:', generalError);
+        // Don't clear form data on error - let user fix the issue
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -374,6 +423,16 @@ const MentorSignupPage = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [formData]);
+
+  // Debug: Monitor error state changes
+  useEffect(() => {
+    console.log('generalError changed to:', generalError);
+  }, [generalError]);
+
+  // Debug: Monitor local error state changes
+  useEffect(() => {
+    console.log('localError changed to:', localError);
+  }, [localError]);
 
   // Check if form is valid for submit button
   const isFormValid = () => {
@@ -504,210 +563,267 @@ const MentorSignupPage = () => {
             <SuccessBanner
               title="Welcome to QueenB, Mentor!"
               subtitle="You're now ready to help others grow and succeed. Your expertise will make a real difference in someone's learning journey."
-              ctaLabel="View All Mentors"
-              onCtaClick={handleExploreMentors}
+              ctaLabel="View My Profile"
+              onCtaClick={() => {
+                const userId = sessionStorage.getItem('currentUserId');
+                if (userId) {
+                  navigate(`/profile/mentor/${userId}`);
+                }
+              }}
               onClose={handleSuccessBannerClose}
               variant="clean"
             />
           )}
 
+          {/* Additional Navigation Options */}
+          {showSuccessBanner && (
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={handleExploreMentors}
+                sx={{ mr: 2 }}
+              >
+                View All Mentors
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  const userId = sessionStorage.getItem('currentUserId');
+                  if (userId) {
+                    navigate(`/profile/mentor/${userId}`);
+                  }
+                }}
+              >
+                Edit My Profile
+              </Button>
+            </Box>
+          )}
+
           {/* Error Message */}
-          {generalError && (
+          {(localError || generalError) && (
             <Alert severity="error" sx={{ mb: 3 }}>
-              {generalError}
+              {localError || generalError}
             </Alert>
           )}
 
           {/* Sign-up Form */}
           <form onSubmit={handleSubmit}>
             {/* Basic Information Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <PersonIcon className="text-pink-500 mr-2" />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Basic Information
-              </h3>
+                <PersonIcon sx={{ color: 'primary.main' }} />
+              </Typography>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Grid container spacing={2}>
                 {/* First Name */}
-                <TextField
-                  name="firstName"
-                  label="First Name *"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.firstName}
-                  helperText={fieldErrors.firstName}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    name="firstName"
+                    label="First Name "
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.firstName}
+                    helperText={fieldErrors.firstName}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Last Name */}
-                <TextField
-                  name="lastName"
-                  label="Last Name *"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.lastName}
-                  helperText={fieldErrors.lastName}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    name="lastName"
+                    label="Last Name "
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.lastName}
+                    helperText={fieldErrors.lastName}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Email */}
-                <TextField
-                  name="email"
-                  label="Email Address *"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.email}
-                  helperText={fieldErrors.email}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12}>
+                  <TextField
+                    name="email"
+                    label="Email Address "
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.email}
+                    helperText={fieldErrors.email}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Password */}
-                <TextField
-                  name="password"
-                  label="Password *"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.password}
-                  helperText={fieldErrors.password}
-                  fullWidth
-                  required
-                />
+                <Grid item xs={12}>
+                  <TextField
+                    name="password"
+                    label="Password "
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.password}
+                    helperText={fieldErrors.password}
+                    fullWidth
+                    required
+                  />
+                </Grid>
                 
                 {/* Phone */}
-                <TextField
-                  name="phone"
-                  label="Phone Number *"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.phone}
-                  helperText={fieldErrors.phone}
-                  fullWidth
-                  required
-                />
-              </div>
-            </div>
+                <Grid item xs={12}>
+                  <TextField
+                    name="phone"
+                    label="Phone Number "
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.phone}
+                    helperText={fieldErrors.phone}
+                    fullWidth
+                    required
+                  />
+                </Grid>
+              </Grid>
+            </Box>
 
-            {/* Avatar Selection */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <AccountCircleIcon className="text-pink-500 mr-2" />
+            {/* Profile Picture Selection */}
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Profile Picture
-              </h3>
-              <AvatarPicker
-                selectedAvatar={formData.avatar}
-                onAvatarSelect={handleAvatarSelect}
-                error={fieldErrors.avatar}
-                firstName={formData.firstName}
-                lastName={formData.lastName}
-              />
-            </div>
+                <AccountCircleIcon sx={{ color: 'primary.main' }} />
+              </Typography>
+              
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <img 
+                  src={formData.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YIKgjCGBqjH8qbrmYoticIccFZGlw2rOtGKKIe9sTRdj8Ur0HyDEe3KVjVPz114DpJM&usqp=CAU'} 
+                  alt="Profile Preview" 
+                  style={{ 
+                    width: 120, 
+                    height: 120, 
+                    borderRadius: '50%',
+                    border: '3px solid',
+                    borderColor: 'primary.light',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Box>
+              
+              <Button
+                variant="outlined"
+                onClick={() => setShowProfileImagePicker(true)}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                Choose Profile Picture
+              </Button>
+            </Box>
 
             {/* Professional Information Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <WorkIcon className="text-pink-500 mr-2" />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Professional Information
-              </h3>
+                <WorkIcon sx={{ color: 'primary.main' }} />
+              </Typography>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Grid container spacing={2}>
                 {/* Years of Experience */}
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Years of Experience *</InputLabel>
-                  <Select
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    type="number"
                     name="yearsOfExperience"
+                    label="Years of Experience "
                     value={formData.yearsOfExperience}
                     onChange={handleInputChange}
-                    label="Years of Experience *"
                     required
-                  >
-                    {experienceLevels.map((level) => (
-                      <MenuItem key={level} value={level}>
-                        {level}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
+                    inputProps={{ min: 0, max: 50 }}
+                    helperText="Enter the number of years (e.g., 5)"
+                  />
+                </Grid>
+                
                 {/* Expertise Areas */}
-                <Autocomplete
-                  multiple
-                  options={availableTechnologies}
-                  value={formData.expertise}
-                  onChange={handleExpertiseChange}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Areas of Expertise *"
-                      placeholder="Select your skills..."
-                      helperText={fieldErrors.expertise || "Choose the technologies you're expert in"}
-                      error={!!fieldErrors.expertise}
-                    />
-                  )}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => {
-                      const { key, ...chipProps } = getTagProps({ index });
-                      return (
-                        <Chip
-                          key={key}
-                          label={option}
-                          {...chipProps}
-                          sx={{
-                            backgroundColor: 'primary.light',
-                            color: 'white',
-                            '& .MuiChip-deleteIcon': {
+                <Grid item xs={12}>
+                  <Autocomplete
+                    multiple
+                    options={availableTechnologies}
+                    value={formData.expertise}
+                    onChange={handleExpertiseChange}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Areas of Expertise *"
+                        placeholder="Select your skills..."
+                        helperText={fieldErrors.expertise || "Choose the technologies you're expert in"}
+                        error={!!fieldErrors.expertise}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => {
+                        const { key, ...chipProps } = getTagProps({ index });
+                        return (
+                          <Chip
+                            key={key}
+                            label={option}
+                            {...chipProps}
+                            sx={{
+                              backgroundColor: 'primary.light',
                               color: 'white',
-                            }
-                          }}
-                        />
-                      );
-                    })
-                  }
-                  sx={{ mb: 2 }}
-                />
-
+                              '& .MuiChip-deleteIcon': {
+                                color: 'white',
+                              }
+                            }}
+                          />
+                        );
+                      })
+                    }
+                  />
+                </Grid>
+                
                 {/* Availability */}
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Availability *</InputLabel>
-                  <Select
-                    name="availability"
-                    value={formData.availability}
-                    onChange={handleInputChange}
-                    label="Availability *"
-                    required
-                  >
-                    {availabilityOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </div>
-            </div>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Availability *</InputLabel>
+                    <Select
+                      name="availability"
+                      value={formData.availability}
+                      onChange={handleInputChange}
+                      label="Availability *"
+                      required
+                    >
+                      {availabilityOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Box>
 
             {/* Description */}
-            <TextField
-              fullWidth
-              label="About You & Your Mentoring Style"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              multiline
-              rows={4}
-              sx={{ mb: 3 }}
-              helperText="Tell mentees about your experience and how you like to mentor in our free community"
-            />
+            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
+              <TextField
+                fullWidth
+                label="About You & Your Mentoring Style"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                multiline
+                rows={4}
+                helperText="Tell mentees about your experience and how you like to mentor in our free community"
+              />
+            </Box>
 
             {/* Contact Links Section */}
             <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2, border: 1, borderColor: 'divider', mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-                <LinkIcon sx={{ color: (theme) => theme?.palette?.primary?.main || '#E8B4B8', mr: 1 }} />
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 Contact Links (Optional)
+                <LinkIcon sx={{ color: 'primary.main' }} />
               </Typography>
               
               <Grid container spacing={2}>
@@ -807,6 +923,13 @@ const MentorSignupPage = () => {
           </form>
         </Paper>
       </Box>
+
+      {/* Profile Image Picker Dialog */}
+      <ProfileImagePicker
+        open={showProfileImagePicker}
+        onClose={() => setShowProfileImagePicker(false)}
+        onImageSelect={handleProfileImageSelect}
+      />
     </Container>
   );
 };

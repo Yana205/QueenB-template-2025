@@ -65,7 +65,7 @@ const mentorSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Years of experience is required'],
     min: [0, 'Years of experience cannot be negative'],
-    max: [50, 'Years of experience seems too high']
+    max: [50, 'Years of experience cannot exceed 50 years']
   },
   
   description: {

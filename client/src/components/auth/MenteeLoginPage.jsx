@@ -38,13 +38,33 @@ const MenteeLoginPage = () => {
     setError('');
 
     try {
-      // Use the authentication service
-      const result = await authService.login(formData.email, formData.password, 'mentee');
+      // Simple authentication - check against mentee database
+      const response = await fetch('/api/mentees');
+      const data = await response.json();
 
-      if (result.success) {
-        // Login successful - redirect to mentors page
-        console.log('Mentee login successful:', result.user.firstName);
-        navigate('/mentors');
+      if (data.success) {
+        // Find mentee with matching email and password
+        const mentee = data.data.find(mentee => 
+          mentee.email === formData.email && 
+          mentee.password === formData.password
+        );
+
+        if (mentee) {
+          // Login successful - set sessionStorage and redirect to mentors page
+          console.log('Mentee login successful:', mentee.firstName);
+          
+          // Store complete user data in sessionStorage for profile access and display
+          sessionStorage.setItem('currentUserId', mentee._id);
+          sessionStorage.setItem('userType', 'mentee');
+          sessionStorage.setItem('userFirstName', mentee.firstName);
+          sessionStorage.setItem('userLastName', mentee.lastName);
+          sessionStorage.setItem('userProfileImage', mentee.profileImage || '');
+          
+          // Redirect to mentors page
+          navigate('/mentors');
+        } else {
+          setError('Invalid email or password');
+        }
       } else {
         setError(result.error || 'Invalid email or password');
       }

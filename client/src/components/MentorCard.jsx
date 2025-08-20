@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Typography, CardContent, CardMedia } from "@mui/material";
+import { Card, Typography, CardContent, CardMedia, Box } from "@mui/material";
 import MentorDialog from "./MentorDialog";
 import MentorFullName from "./mentor/MentorFullName";
 import MentorTechnologies from "./mentor/MentorTechnologies";
@@ -10,7 +10,6 @@ function MentorCard({ mentor }) {
   return (
     <>
       <Card
-        onClick={() => setOpen(true)}
         sx={{
           height: 300,
           width: 300,
@@ -31,6 +30,22 @@ function MentorCard({ mentor }) {
           <MentorFullName mentor={mentor} />
           <MentorTechnologies mentor={mentor} />
         </CardContent>
+
+        {/* Click to open dialog */}
+        <Box 
+          onClick={() => setOpen(true)}
+          sx={{ 
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'center',
+            py: 1,
+            '&:hover': { bgcolor: 'action.hover' }
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            Click to see contact info
+          </Typography>
+        </Box>
       </Card>
 
       {/* click on mentor card will open dialog with the mentor contact card */}

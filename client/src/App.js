@@ -10,6 +10,7 @@ import MenteeSignupPage from "./components/auth/MenteeSignupPage";
 import MentorLoginPage from "./components/auth/MentorLoginPage";
 import MentorSignupPage from "./components/auth/MentorSignupPage";
 import HomePage from "./components/HomePage";
+import ProfilePage from "./components/ProfilePage/ProfilePage";
 import { useTheme } from "./hook/useTheme";
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
           <Route path="/login/mentor" element={<MentorLoginPage />} />
           <Route path="/signup/mentor" element={<MentorSignupPage />} />
           <Route path="/mentors" element={<HomePage />} />
+          <Route path="/profile/mentor/:id" element={<ProfilePage />} />
+          <Route path="/profile/mentee/:id" element={<ProfilePage />} />
         </Routes>
       </Router>
     </ThemeProvider>

@@ -38,13 +38,33 @@ const MentorLoginPage = () => {
     setError('');
 
     try {
-      // Use the authentication service
-      const result = await authService.login(formData.email, formData.password, 'mentor');
+      // Simple authentication - check against mentor database
+      const response = await fetch('/api/mentors');
+      const data = await response.json();
 
-      if (result.success) {
-        // Login successful - redirect to mentors page
-        console.log('Mentor login successful:', result.user.firstName);
-        navigate('/mentors');
+      if (data.success) {
+        // Find mentor with matching email and password
+        const mentor = data.data.find(mentor => 
+          mentor.email === formData.email && 
+          mentor.password === formData.password
+        );
+
+        if (mentor) {
+          // Login successful - set sessionStorage and redirect to mentors page
+          console.log('Mentor login successful:', mentor.firstName);
+          
+          // Store complete user data in sessionStorage for profile access and display
+          sessionStorage.setItem('currentUserId', mentor._id);
+          sessionStorage.setItem('userType', 'mentor');
+          sessionStorage.setItem('userFirstName', mentor.firstName);
+          sessionStorage.setItem('userLastName', mentor.lastName);
+          sessionStorage.setItem('userProfileImage', mentor.profileImage || '');
+          
+          // Redirect to mentors page
+          navigate('/mentors');
+        } else {
+          setError('Invalid email or password');
+        }
       } else {
         setError(result.error || 'Invalid email or password');
       }

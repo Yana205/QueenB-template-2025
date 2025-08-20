@@ -15,13 +15,18 @@ router.get('/', async (req, res) => {
     const mentors = await Mentor.find()
       .sort({ createdAt: -1 }); // Newest first
     
+    console.log(`✅ Found ${mentors.length} mentors in database`);
+    mentors.forEach(mentor => {
+      console.log(`  - ${mentor.firstName} ${mentor.lastName} (ID: ${mentor._id})`);
+    });
+    
     res.json({
       success: true,
       count: mentors.length,
       data: mentors
     });
   } catch (error) {
-    console.error('Error fetching mentors:', error);
+    console.error('❌ Error fetching mentors:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch mentors'
@@ -72,21 +77,24 @@ router.get('/search', async (req, res) => {
 // ==========================================
 router.get('/:id', async (req, res) => {
   try {
+    console.log('🔍 Fetching mentor with ID:', req.params.id);
     const mentor = await Mentor.findById(req.params.id);
     
     if (!mentor) {
+      console.log('❌ Mentor not found:', req.params.id);
       return res.status(404).json({
         success: false,
         error: 'Mentor not found'
       });
     }
     
+    console.log('✅ Mentor found:', mentor.firstName, mentor.lastName);
     res.json({
       success: true,
       data: mentor
     });
   } catch (error) {
-    console.error('Error fetching mentor:', error);
+    console.error('❌ Error fetching mentor:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch mentor'
@@ -147,6 +155,31 @@ router.post('/', async (req, res) => {
 // ==========================================
 router.put('/:id', async (req, res) => {
   try {
+    console.log('🔄 Attempting to update mentor with ID:', req.params.id);
+    console.log('📝 Update data received:', req.body);
+    
+    // Validate the mentor ID
+    if (!req.params.id || req.params.id.length !== 24) {
+      console.log('❌ Invalid mentor ID format:', req.params.id);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid mentor ID format'
+      });
+    }
+    
+    // Check if mentor exists before updating
+    const existingMentor = await Mentor.findById(req.params.id);
+    if (!existingMentor) {
+      console.log('❌ Mentor not found for update:', req.params.id);
+      return res.status(404).json({
+        success: false,
+        error: 'Mentor not found'
+      });
+    }
+    
+    console.log('✅ Found mentor to update:', existingMentor.firstName, existingMentor.lastName);
+    
+    // Perform the update
     const mentor = await Mentor.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -157,11 +190,14 @@ router.put('/:id', async (req, res) => {
     );
     
     if (!mentor) {
-      return res.status(404).json({
+      console.log('❌ Failed to update mentor:', req.params.id);
+      return res.status(500).json({
         success: false,
-        error: 'Mentor not found'
+        error: 'Failed to update mentor'
       });
     }
+    
+    console.log('✅ Mentor updated successfully:', mentor.firstName, mentor.lastName);
     
     res.json({
       success: true,
@@ -169,10 +205,31 @@ router.put('/:id', async (req, res) => {
       message: 'Mentor updated successfully!'
     });
   } catch (error) {
-    console.error('Error updating mentor:', error);
+    console.error('❌ Error updating mentor:', error);
+    
+    // Provide more specific error messages
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      console.log('❌ Validation errors:', validationErrors);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: validationErrors
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      console.log('❌ Cast error - invalid data type:', error.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid data format'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to update mentor'
+      error: 'Failed to update mentor',
+      details: error.message
     });
   }
 });
@@ -182,13 +239,39 @@ router.put('/:id', async (req, res) => {
 // ==========================================
 router.delete('/:id', async (req, res) => {
   try {
-    const mentor = await Mentor.findByIdAndDelete(req.params.id);
+    console.log('🗑️ Attempting to delete mentor with ID:', req.params.id);
     
-    if (!mentor) {
+    // First, check if mentor exists
+    const existingMentor = await Mentor.findById(req.params.id);
+    if (!existingMentor) {
+      console.log('❌ Mentor not found for deletion:', req.params.id);
       return res.status(404).json({
         success: false,
         error: 'Mentor not found'
       });
+    }
+    
+    console.log('✅ Found mentor to delete:', existingMentor.firstName, existingMentor.lastName);
+    
+    // Perform the deletion
+    const deletedMentor = await Mentor.findByIdAndDelete(req.params.id);
+    
+    if (!deletedMentor) {
+      console.log('❌ Failed to delete mentor:', req.params.id);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to delete mentor'
+      });
+    }
+    
+    console.log('✅ Mentor deleted successfully:', deletedMentor.firstName, deletedMentor.lastName);
+    
+    // Verify deletion by trying to find the mentor again
+    const verifyDeletion = await Mentor.findById(req.params.id);
+    if (verifyDeletion) {
+      console.log('⚠️ WARNING: Mentor still exists after deletion!', req.params.id);
+    } else {
+      console.log('✅ Verification: Mentor successfully removed from database');
     }
     
     res.json({
@@ -196,7 +279,7 @@ router.delete('/:id', async (req, res) => {
       message: 'Mentor deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting mentor:', error);
+    console.error('❌ Error deleting mentor:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete mentor'
